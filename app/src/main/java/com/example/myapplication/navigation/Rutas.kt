@@ -1,0 +1,16 @@
+package com.example.myapplication.navigation
+
+object Rutas {
+    const val LOGIN = "login"
+    const val JORNADA = "jornada"
+    const val DETALLE = "detalle"
+    const val CHECKIN = "checkin"
+    const val EJECUCION = "ejecucion"
+    const val EVIDENCIAS = "evidencias"
+    const val CIERRE = "cierre"
+    const val SYNC = "sync"
+    const val DASHBOARD = "dashboard"
+    const val CREAR_OT = "crear"
+    const val AGENDA = "agenda"
+    const val CLIENTE = "cliente"
+}
