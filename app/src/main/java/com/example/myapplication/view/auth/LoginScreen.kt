@@ -8,7 +8,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.SupervisorAccount
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,13 +18,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.myapplication.viewmodel.AppViewModel
+import com.example.myapplication.viewmodel.AuthViewModel
 
 @Composable
-fun LoginScreen(viewModel: AppViewModel) {
+fun LoginScreen(viewModel: AppViewModel, authViewModel: AuthViewModel = viewModel()) {
     var selectedRole by remember { mutableStateOf("tecnico") }
     var username by remember { mutableStateOf("cristian.rojas") }
-    var password by remember { mutableStateOf("••••••••") }
+    var password by remember { mutableStateOf("password123") }
+    val loginError by authViewModel.loginError.collectAsState()
 
     Box(
         modifier = Modifier
@@ -78,7 +80,14 @@ fun LoginScreen(viewModel: AppViewModel) {
                             .weight(1f)
                             .clip(RoundedCornerShape(8.dp))
                             .background(if (sel) Color(0xFF0EA5E9) else Color.Transparent)
-                            .clickable { selectedRole = role }
+                            .clickable {
+                                selectedRole = role
+                                username = when (role) {
+                                    "tecnico" -> "cristian.rojas"
+                                    "jefe" -> "gerardo.jefe"
+                                    else -> "maria.cliente"
+                                }
+                            }
                             .padding(vertical = 8.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -129,10 +138,19 @@ fun LoginScreen(viewModel: AppViewModel) {
                     textStyle = LocalTextStyle.current.copy(fontSize = 12.sp)
                 )
 
+                if (loginError != null) {
+                    Text(text = loginError!!, color = Color(0xFFEF4444), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
+
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Button(
-                    onClick = { viewModel.login(selectedRole) },
+                    onClick = {
+                        val success = authViewModel.login(username, selectedRole)
+                        if (success) {
+                            viewModel.login(selectedRole)
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth().height(48.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0EA5E9)),
                     shape = RoundedCornerShape(12.dp)

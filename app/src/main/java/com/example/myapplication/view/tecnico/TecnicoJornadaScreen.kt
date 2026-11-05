@@ -39,6 +39,9 @@ fun TecnicoJornadaScreen(viewModel: AppViewModel) {
         title = "Mi jornada",
         subtitle = "Jueves 27 de octubre",
         actions = {
+            IconButton(onClick = { viewModel.navigateTo(Rutas.LOGIN) }) {
+                Icon(Icons.Filled.ExitToApp, contentDescription = "Cerrar sesión", tint = Color.White)
+            }
             IconButton(onClick = { viewModel.navigateTo(Rutas.SYNC) }) {
                 Box {
                     Icon(Icons.Filled.Refresh, contentDescription = "Sync", tint = Color.White)
@@ -150,14 +153,20 @@ fun TecnicoJornadaScreen(viewModel: AppViewModel) {
                         .height(220.dp)
                         .clip(RoundedCornerShape(16.dp))
                         .background(Color(0xFF1E293B))
-                        .border(1.dp, Color(0xFF334155), RoundedCornerShape(16.dp)),
+                        .border(1.dp, Color(0xFF334155), RoundedCornerShape(16.dp))
+                        .clickable {
+                            ots.firstOrNull()?.let { recentOt ->
+                                viewModel.selectOt(recentOt.id)
+                                viewModel.navigateTo(Rutas.DETALLE)
+                            }
+                        },
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Filled.Map, contentDescription = null, tint = Color(0xFF0EA5E9), modifier = Modifier.size(48.dp))
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(text = "Mapa interactivo de ruta", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                        Text(text = "3 OT cerca de tu ubicación actual", color = Color(0xFF94A3B8), fontSize = 11.sp)
+                        Text(text = "Toca para abrir OT más reciente (${ots.firstOrNull()?.id ?: "OT"})", color = Color(0xFF94A3B8), fontSize = 11.sp)
                     }
                 }
             } else {
