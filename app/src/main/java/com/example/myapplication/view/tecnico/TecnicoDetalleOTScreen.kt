@@ -28,7 +28,7 @@ import com.example.myapplication.viewmodel.AppViewModel
 
 @Composable
 fun TecnicoDetalleOTScreen(viewModel: AppViewModel) {
-    val ot = MockRepository.defaultOT
+    val ot = viewModel.selectedOT
     val tecnico = MockRepository.tecnico
     val estado = if (viewModel.checkinDone) "En ejecución" else if (viewModel.otAccepted) "Aceptada" else ot.estado
 

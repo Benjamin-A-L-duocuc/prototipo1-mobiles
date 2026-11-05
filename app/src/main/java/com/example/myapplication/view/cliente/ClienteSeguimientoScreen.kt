@@ -30,8 +30,8 @@ fun ClienteSeguimientoScreen(viewModel: AppViewModel) {
     var conforme by remember { mutableStateOf(true) }
     val cliente = MockRepository.cliente
     val tecnico = MockRepository.tecnico
-    val ot = MockRepository.defaultOT
-    val estado = if (signed) "Conformada" else "Cerrada"
+    val ot = viewModel.selectedOT
+    val estado = if (signed) "Conformada" else ot.estado
 
     PhoneScreen(
         title = "Seguimiento OT",
@@ -69,15 +69,15 @@ fun ClienteSeguimientoScreen(viewModel: AppViewModel) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Column {
                         Text(text = "EQUIPO", color = Color(0xFF64748B), fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                        Text(text = "Cámara frigorífica", color = Color(0xFFCBD5E1), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text(text = ot.equipo, color = Color(0xFFCBD5E1), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
                     Column {
                         Text(text = "TÉCNICO", color = Color(0xFF64748B), fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                        Text(text = "Cristian R.", color = Color(0xFFCBD5E1), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text(text = tecnico.nombre, color = Color(0xFFCBD5E1), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
                     Column {
                         Text(text = "SLA", color = Color(0xFF64748B), fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                        Text(text = "Cumplido", color = Color(0xFF10B981), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text(text = ot.sla, color = Color(0xFF10B981), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }

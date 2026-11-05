@@ -28,7 +28,7 @@ fun TecnicoCierreScreen(viewModel: AppViewModel) {
     var signed by remember { mutableStateOf(false) }
     var conforme by remember { mutableStateOf(true) }
     val cliente = MockRepository.cliente
-    val ot = MockRepository.defaultOT
+    val ot = viewModel.selectedOT
 
     PhoneScreen(
         title = "Cierre de OT",

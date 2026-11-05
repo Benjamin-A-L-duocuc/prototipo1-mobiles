@@ -168,7 +168,8 @@ fun JefeDashboardScreen(viewModel: AppViewModel) {
                 Text(text = "3 en riesgo", color = Color(0xFFEF4444), fontSize = 10.sp, fontWeight = FontWeight.Bold)
             }
 
-            MockRepository.otPrioritarias.forEach { ot ->
+            val ots = viewModel.otList
+            ots.forEach { ot ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -189,12 +190,12 @@ fun JefeDashboardScreen(viewModel: AppViewModel) {
                         Icon(Icons.AutoMirrored.Filled.Assignment, contentDescription = null, tint = Color(0xFF0EA5E9), modifier = Modifier.size(16.dp))
                     }
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(text = ot["cliente"] ?: "", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        Text(text = "${ot["id"]} · SLA ${ot["sla"]}", color = Color(0xFF94A3B8), fontSize = 9.sp)
+                        Text(text = ot.cliente, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "${ot.id} · SLA ${ot.sla}", color = Color(0xFF94A3B8), fontSize = 9.sp)
                     }
                     Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        PriorityBadge(priority = ot["prioridad"] ?: "Media")
-                        StatusBadge(status = ot["estado"] ?: "Asignada")
+                        PriorityBadge(priority = ot.prioridad)
+                        StatusBadge(status = ot.estado)
                     }
                 }
             }

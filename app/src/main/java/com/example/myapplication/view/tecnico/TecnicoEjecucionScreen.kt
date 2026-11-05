@@ -43,9 +43,10 @@ fun TecnicoEjecucionScreen(viewModel: AppViewModel) {
         else -> 4
     }
 
+    val ot = viewModel.selectedOT
     PhoneScreen(
         title = "Ejecución",
-        subtitle = "${MockRepository.defaultOT.id} · En ejecución",
+        subtitle = "${ot.id} · En ejecución",
         onBack = { viewModel.navigateTo(Rutas.DETALLE) }
     ) {
         Column(

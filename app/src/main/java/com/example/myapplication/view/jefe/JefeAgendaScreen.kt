@@ -18,7 +18,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.myapplication.data.repository.MockRepository
 import com.example.myapplication.navigation.Rutas
 import com.example.myapplication.ui.components.PhoneScreen
 import com.example.myapplication.ui.components.PriorityBadge
@@ -29,7 +28,7 @@ fun JefeAgendaScreen(viewModel: AppViewModel) {
     var dia by remember { mutableStateOf("lun") }
     var reprogramadas by remember { mutableStateOf(false) }
     val lluvia = viewModel.scenario == "lluvia"
-    val agenda = MockRepository.agendaHoy
+    val ots = viewModel.otList
 
     PhoneScreen(
         title = "Agenda",
@@ -89,7 +88,7 @@ fun JefeAgendaScreen(viewModel: AppViewModel) {
                             Icon(Icons.Filled.WbCloudy, contentDescription = null, tint = Color(0xFFB45309))
                         }
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "2 visitas con equipos exteriores en riesgo", color = Color(0xFF78350F), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Text(text = "Visitas con equipos exteriores en riesgo", color = Color(0xFF78350F), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(text = "Lluvia y viento fuerte entre 15:00 y 18:00. Reprograma o adelanta estas visitas.", color = Color(0xFF92400E), fontSize = 10.sp)
                             Spacer(modifier = Modifier.height(8.dp))
@@ -111,11 +110,12 @@ fun JefeAgendaScreen(viewModel: AppViewModel) {
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text(text = "VISITAS DEL DÍA", color = Color(0xFF94A3B8), fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                Text(text = "${agenda.size} programadas", color = Color(0xFF94A3B8), fontSize = 10.sp)
+                Text(text = "${ots.size} programadas", color = Color(0xFF94A3B8), fontSize = 10.sp)
             }
 
-            agenda.forEach { visita ->
-                val enRiesgo = lluvia && visita.exterior
+            ots.forEachIndexed { index, ot ->
+                val hora = listOf("09:00", "11:30", "14:00", "16:30", "18:00")[index % 5]
+                val enRiesgo = lluvia && ot.exterior
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -126,24 +126,24 @@ fun JefeAgendaScreen(viewModel: AppViewModel) {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Text(text = visita.hora, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.width(40.dp))
+                    Text(text = hora, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.width(40.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = visita.cliente, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                            PriorityBadge(priority = visita.prioridad)
+                            Text(text = ot.cliente, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            PriorityBadge(priority = ot.prioridad)
                         }
-                        Text(text = "${visita.ot} · ${visita.tecnico}", color = Color(0xFF94A3B8), fontSize = 9.sp)
+                        Text(text = "${ot.id} · Cristian Rojas", color = Color(0xFF94A3B8), fontSize = 9.sp)
                         Spacer(modifier = Modifier.height(2.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                             Icon(
-                                if (visita.exterior) Icons.Filled.WbCloudy else Icons.Filled.WbSunny,
+                                if (ot.exterior) Icons.Filled.WbCloudy else Icons.Filled.WbSunny,
                                 contentDescription = null,
-                                tint = if (visita.exterior) Color(0xFFF59E0B) else Color(0xFF94A3B8),
+                                tint = if (ot.exterior) Color(0xFFF59E0B) else Color(0xFF94A3B8),
                                 modifier = Modifier.size(12.dp)
                             )
                             Text(
-                                text = if (visita.exterior) "Equipo exterior" else "Interior",
-                                color = if (visita.exterior) Color(0xFFF59E0B) else Color(0xFF94A3B8),
+                                text = if (ot.exterior) "Equipo exterior" else "Interior",
+                                color = if (ot.exterior) Color(0xFFF59E0B) else Color(0xFF94A3B8),
                                 fontSize = 9.sp
                             )
                         }

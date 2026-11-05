@@ -27,10 +27,11 @@ import com.example.myapplication.viewmodel.AppViewModel
 fun TecnicoEvidenciasScreen(viewModel: AppViewModel) {
     var photoCount by remember { mutableStateOf(2) }
     var comentario by remember { mutableStateOf("Se adjuntan fotos del condensador antes y después de la limpieza.") }
+    val ot = viewModel.selectedOT
 
     PhoneScreen(
         title = "Evidencias",
-        subtitle = "${MockRepository.defaultOT.id} · Fotos de la intervención",
+        subtitle = "${ot.id} · Fotos de la intervención",
         onBack = { viewModel.navigateTo(Rutas.EJECUCION) }
     ) {
         Column(

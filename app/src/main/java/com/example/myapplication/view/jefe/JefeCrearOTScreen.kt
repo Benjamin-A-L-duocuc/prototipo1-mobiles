@@ -31,6 +31,10 @@ fun JefeCrearOTScreen(viewModel: AppViewModel) {
     var tipo by remember { mutableStateOf("preventivo") }
     var prioridad by remember { mutableStateOf("media") }
     var disponible by remember { mutableStateOf("si") }
+    var clienteInput by remember { mutableStateOf("Supermercado Ñuñoa") }
+    var equipoInput by remember { mutableStateOf("Cámara frigorífica 4 puertas") }
+    var descripcionInput by remember { mutableStateOf("Mantención y revisión general solicitada por local.") }
+    var createdOtId by remember { mutableStateOf("OT-1046") }
 
     val sinDisponibilidad = disponible == "no"
 
@@ -65,7 +69,7 @@ fun JefeCrearOTScreen(viewModel: AppViewModel) {
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = if (sinDisponibilidad) "OT-1046 quedó pendiente de asignación." else "OT-1046 asignada a Cristian Rojas para el 28/10.",
+                    text = if (sinDisponibilidad) "$createdOtId quedó pendiente de asignación." else "$createdOtId asignada a Cristian Rojas para el 28/10.",
                     color = Color(0xFF94A3B8),
                     fontSize = 11.sp
                 )
@@ -82,12 +86,16 @@ fun JefeCrearOTScreen(viewModel: AppViewModel) {
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(text = "ID", color = Color(0xFF94A3B8), fontSize = 11.sp)
+                        Text(text = createdOtId, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text(text = "Cliente", color = Color(0xFF94A3B8), fontSize = 11.sp)
-                        Text(text = "Supermercado Ñuñoa", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text(text = clienteInput, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text(text = "Equipo", color = Color(0xFF94A3B8), fontSize = 11.sp)
-                        Text(text = "Cámara frigorífica", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text(text = equipoInput, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text(text = "Prioridad", color = Color(0xFF94A3B8), fontSize = 11.sp)
@@ -136,21 +144,47 @@ fun JefeCrearOTScreen(viewModel: AppViewModel) {
             ) {
                 Text(text = "DETALLES DE LA OT", color = Color(0xFF94A3B8), fontSize = 10.sp, fontWeight = FontWeight.Bold)
 
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(text = "Cliente", color = Color(0xFFCBD5E1), fontSize = 11.sp)
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(42.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFF0F172A))
-                            .border(1.dp, Color(0xFF334155), RoundedCornerShape(8.dp))
-                            .padding(horizontal = 12.dp),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        Text(text = "Supermercado Ñuñoa", color = Color.White, fontSize = 11.sp)
-                    }
-                }
+                OutlinedTextField(
+                    value = clienteInput,
+                    onValueChange = { clienteInput = it },
+                    label = { Text("Cliente / Empresa", color = Color(0xFF94A3B8), fontSize = 11.sp) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF0EA5E9),
+                        unfocusedBorderColor = Color(0xFF334155),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White
+                    ),
+                    textStyle = LocalTextStyle.current.copy(fontSize = 12.sp)
+                )
+
+                OutlinedTextField(
+                    value = equipoInput,
+                    onValueChange = { equipoInput = it },
+                    label = { Text("Equipo / Activo", color = Color(0xFF94A3B8), fontSize = 11.sp) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF0EA5E9),
+                        unfocusedBorderColor = Color(0xFF334155),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White
+                    ),
+                    textStyle = LocalTextStyle.current.copy(fontSize = 12.sp)
+                )
+
+                OutlinedTextField(
+                    value = descripcionInput,
+                    onValueChange = { descripcionInput = it },
+                    label = { Text("Descripción del problema", color = Color(0xFF94A3B8), fontSize = 11.sp) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF0EA5E9),
+                        unfocusedBorderColor = Color(0xFF334155),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White
+                    ),
+                    textStyle = LocalTextStyle.current.copy(fontSize = 12.sp)
+                )
 
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(text = "Tipo de OT", color = Color(0xFFCBD5E1), fontSize = 11.sp)
@@ -242,19 +276,21 @@ fun JefeCrearOTScreen(viewModel: AppViewModel) {
 
             Button(
                 onClick = {
+                    val nextIdNum = 1042 + viewModel.otList.size + 1
+                    createdOtId = "OT-$nextIdNum"
                     val newOt = OT(
-                        id = "OT-1046",
-                        cliente = "Supermercado Ñuñoa",
-                        local = "Local Ñuñoa",
-                        direccion = "Av. Irarrázaval 3400, Ñuñoa",
-                        equipo = "Cámara frigorífica 4 puertas",
-                        equipoId = "EQ-221",
+                        id = createdOtId,
+                        cliente = clienteInput.ifBlank { "Cliente General" },
+                        local = "Local Principal",
+                        direccion = "Av. Principal 123",
+                        equipo = equipoInput.ifBlank { "Equipo Climatización" },
+                        equipoId = "EQ-${100 + nextIdNum % 100}",
                         tipo = tipo.replaceFirstChar { it.uppercase() },
                         prioridad = prioridad.replaceFirstChar { it.uppercase() },
                         estado = if (sinDisponibilidad) "Pendiente" else "Asignada",
                         sla = "2h",
                         distancia = "3,2 km",
-                        descripcion = "Nueva orden creada desde panel de jefatura.",
+                        descripcion = descripcionInput.ifBlank { "Orden de trabajo creada desde panel de jefatura." },
                         exterior = false
                     )
                     viewModel.addNewOt(newOt)

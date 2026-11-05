@@ -26,7 +26,7 @@ import com.example.myapplication.viewmodel.AppViewModel
 
 @Composable
 fun TecnicoCheckInScreen(viewModel: AppViewModel) {
-    val ot = MockRepository.defaultOT
+    val ot = viewModel.selectedOT
 
     PhoneScreen(
         title = "Check-in",

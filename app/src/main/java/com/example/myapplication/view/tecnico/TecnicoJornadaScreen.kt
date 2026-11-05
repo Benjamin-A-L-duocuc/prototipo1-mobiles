@@ -172,7 +172,10 @@ fun TecnicoJornadaScreen(viewModel: AppViewModel) {
                             .clip(RoundedCornerShape(16.dp))
                             .background(Color(0xFF1E293B))
                             .border(1.dp, Color(0xFF334155), RoundedCornerShape(16.dp))
-                            .clickable { viewModel.navigateTo(Rutas.DETALLE) }
+                            .clickable {
+                                viewModel.selectOt(ot.id)
+                                viewModel.navigateTo(Rutas.DETALLE)
+                            }
                             .padding(14.dp)
                     ) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
