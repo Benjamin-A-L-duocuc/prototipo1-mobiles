@@ -13,3 +13,7 @@
 .externalNativeBuild
 .cxx
 local.properties
+# Context / rubric files
+context(gitignoreit)/
+app/context/
+context/
