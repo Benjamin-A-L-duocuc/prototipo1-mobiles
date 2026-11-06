@@ -28,10 +28,10 @@ import com.example.myapplication.viewmodel.AppViewModel
 fun ClienteSeguimientoScreen(viewModel: AppViewModel) {
     var signed by remember { mutableStateOf(false) }
     var conforme by remember { mutableStateOf(true) }
-    val cliente = MockRepository.cliente
+    var clientNameInput by remember { mutableStateOf(viewModel.currentUserName) }
     val tecnico = MockRepository.tecnico
     val ot = viewModel.selectedOT
-    val estado = if (signed) "Conformada" else ot.estado
+    val estado = if (signed || ot.estado == "Conformada") "Conformada" else ot.estado
 
     PhoneScreen(
         title = "Seguimiento OT",
@@ -94,8 +94,9 @@ fun ClienteSeguimientoScreen(viewModel: AppViewModel) {
                 Text(text = "ESTADO DE LA OT", color = Color(0xFF94A3B8), fontSize = 10.sp, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(10.dp))
 
+                val isConformada = signed || ot.estado == "Conformada"
                 val timelineItems = MockRepository.timeline.map {
-                    if (it.hito == "Conformada") it.copy(fecha = if (signed) "27/10 · 10:40" else "Pendiente", hecho = signed)
+                    if (it.hito == "Conformada") it.copy(fecha = if (isConformada) "27/10 · 10:40" else "Pendiente", hecho = isConformada)
                     else it
                 }
 
@@ -166,7 +167,8 @@ fun ClienteSeguimientoScreen(viewModel: AppViewModel) {
                     .border(1.dp, Color(0xFF334155), RoundedCornerShape(16.dp))
                     .padding(14.dp)
             ) {
-                if (signed) {
+                val isConformada = signed || ot.estado == "Conformada"
+                if (isConformada) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -176,26 +178,35 @@ fun ClienteSeguimientoScreen(viewModel: AppViewModel) {
                             .padding(12.dp)
                     ) {
                         Column {
-                            Text(text = "Trabajo validado como conforme por ${cliente.nombre}.", color = Color(0xFF6EE7B7), fontSize = 11.sp)
+                            Text(text = "Trabajo validado como conforme por el cliente.", color = Color(0xFF6EE7B7), fontSize = 11.sp)
                             Spacer(modifier = Modifier.height(6.dp))
-                            Text(text = "María Soto", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                            Text(text = "Firma registrada · 27/10 · 10:40", color = Color(0xFF94A3B8), fontSize = 9.sp)
+                            Text(text = clientNameInput, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            Text(text = "Firma registrada · Estado: Conformada", color = Color(0xFF94A3B8), fontSize = 9.sp)
                         }
                     }
                 } else {
                     Text(text = "VALIDAR CONFORMIDAD", color = Color(0xFF94A3B8), fontSize = 10.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(10.dp))
 
+                    OutlinedTextField(
+                        value = clientNameInput,
+                        onValueChange = { clientNameInput = it },
+                        label = { Text("Nombre del Cliente / Representante") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(90.dp)
+                            .height(80.dp)
                             .clip(RoundedCornerShape(10.dp))
                             .background(Color(0xFF0F172A))
                             .border(1.dp, Color(0xFF334155), RoundedCornerShape(10.dp)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(text = "[ Firma de conformidad del cliente ]", color = Color(0xFF64748B), fontSize = 12.sp)
+                        Text(text = "[ Firma Digital: $clientNameInput ]", color = Color(0xFF38BDF8), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
 
                     Spacer(modifier = Modifier.height(10.dp))
@@ -212,8 +223,11 @@ fun ClienteSeguimientoScreen(viewModel: AppViewModel) {
                     Spacer(modifier = Modifier.height(10.dp))
 
                     Button(
-                        onClick = { signed = true },
-                        enabled = conforme,
+                        onClick = {
+                            signed = true
+                            viewModel.updateOtState(ot.id, "Conformada")
+                        },
+                        enabled = conforme && clientNameInput.isNotBlank(),
                         modifier = Modifier.fillMaxWidth().height(48.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0EA5E9)),
                         shape = RoundedCornerShape(12.dp)

@@ -10,7 +10,7 @@ class LocalDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
 
     companion object {
         private const val DATABASE_NAME = "prototipo_acis.db"
-        private const val DATABASE_VERSION = 2
+        private const val DATABASE_VERSION = 3
 
         // Tables
         private const val TABLE_OT = "ots"
@@ -220,6 +220,31 @@ class LocalDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
         return list
     }
 
+    fun getOtById(id: String): OT? {
+        val db = readableDatabase
+        val cursor = db.rawQuery("SELECT * FROM $TABLE_OT WHERE id = ?", arrayOf(id))
+        cursor.use {
+            if (it.moveToFirst()) {
+                return OT(
+                    id = it.getString(it.getColumnIndexOrThrow("id")),
+                    cliente = it.getString(it.getColumnIndexOrThrow("cliente")),
+                    local = it.getString(it.getColumnIndexOrThrow("local")),
+                    direccion = it.getString(it.getColumnIndexOrThrow("direccion")),
+                    equipo = it.getString(it.getColumnIndexOrThrow("equipo")),
+                    equipoId = it.getString(it.getColumnIndexOrThrow("equipoId")),
+                    tipo = it.getString(it.getColumnIndexOrThrow("tipo")),
+                    prioridad = it.getString(it.getColumnIndexOrThrow("prioridad")),
+                    estado = it.getString(it.getColumnIndexOrThrow("estado")),
+                    sla = it.getString(it.getColumnIndexOrThrow("sla")),
+                    distancia = it.getString(it.getColumnIndexOrThrow("distancia")),
+                    descripcion = it.getString(it.getColumnIndexOrThrow("descripcion")),
+                    exterior = it.getInt(it.getColumnIndexOrThrow("exterior")) == 1
+                )
+            }
+        }
+        return null
+    }
+
     fun insertOt(ot: OT) {
         val db = writableDatabase
         val values = ContentValues().apply {
@@ -240,6 +265,30 @@ class LocalDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
         db.insertWithOnConflict(TABLE_OT, null, values, SQLiteDatabase.CONFLICT_REPLACE)
     }
 
+    fun updateOt(ot: OT) {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put("cliente", ot.cliente)
+            put("local", ot.local)
+            put("direccion", ot.direccion)
+            put("equipo", ot.equipo)
+            put("equipoId", ot.equipoId)
+            put("tipo", ot.tipo)
+            put("prioridad", ot.prioridad)
+            put("estado", ot.estado)
+            put("sla", ot.sla)
+            put("distancia", ot.distancia)
+            put("descripcion", ot.descripcion)
+            put("exterior", if (ot.exterior) 1 else 0)
+        }
+        db.update(TABLE_OT, values, "id = ?", arrayOf(ot.id))
+    }
+
+    fun deleteOt(id: String) {
+        val db = writableDatabase
+        db.delete(TABLE_OT, "id = ?", arrayOf(id))
+    }
+
     fun updateOtEstado(id: String, nuevoEstado: String) {
         val db = writableDatabase
         val values = ContentValues().apply {
@@ -248,22 +297,28 @@ class LocalDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
         db.update(TABLE_OT, values, "id = ?", arrayOf(id))
     }
 
-    // Additional methods for Equipment and Clients catalog (EP-05)
-    fun getAllEquipment(): List<Map<String, Any>> {
-        val list = mutableListOf<Map<String, Any>>()
+    fun addSyncItem(tipo: String, detalle: String, icono: String) {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put("tipo", tipo)
+            put("detalle", detalle)
+            put("icono", icono)
+        }
+        db.insert(TABLE_SYNC, null, values)
+    }
+
+    fun getSyncItems(): List<SyncItem> {
+        val list = mutableListOf<SyncItem>()
         val db = readableDatabase
-        val cursor = db.rawQuery("SELECT * FROM $TABLE_EQUIPMENT", null)
+        val cursor = db.rawQuery("SELECT * FROM $TABLE_SYNC", null)
         cursor.use {
             if (it.moveToFirst()) {
                 do {
                     list.add(
-                        mapOf(
-                            "id" to it.getString(it.getColumnIndexOrThrow("id")),
-                            "nombre" to it.getString(it.getColumnIndexOrThrow("nombre")),
-                            "local" to it.getString(it.getColumnIndexOrThrow("local")),
-                            "ubicacion" to it.getString(it.getColumnIndexOrThrow("ubicacion")),
-                            "exterior" to (it.getInt(it.getColumnIndexOrThrow("exterior")) == 1),
-                            "ultima_mantencion" to it.getString(it.getColumnIndexOrThrow("ultima_mantencion"))
+                        SyncItem(
+                            tipo = it.getString(it.getColumnIndexOrThrow("tipo")),
+                            detalle = it.getString(it.getColumnIndexOrThrow("detalle")),
+                            icono = it.getString(it.getColumnIndexOrThrow("icono"))
                         )
                     )
                 } while (it.moveToNext())
@@ -272,16 +327,8 @@ class LocalDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
         return list
     }
 
-    fun addEquipment(id: String, nombre: String, local: String, ubicacion: String, exterior: Boolean, ultimaMantencion: String) {
+    fun clearSyncItems() {
         val db = writableDatabase
-        val values = ContentValues().apply {
-            put("id", id)
-            put("nombre", nombre)
-            put("local", local)
-            put("ubicacion", ubicacion)
-            put("exterior", if (exterior) 1 else 0)
-            put("ultima_mantencion", ultimaMantencion)
-        }
-        db.insertWithOnConflict(TABLE_EQUIPMENT, null, values, SQLiteDatabase.CONFLICT_REPLACE)
+        db.delete(TABLE_SYNC, null, null)
     }
 }

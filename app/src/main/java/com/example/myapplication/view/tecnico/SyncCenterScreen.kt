@@ -18,7 +18,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.myapplication.data.repository.MockRepository
 import com.example.myapplication.navigation.Rutas
 import com.example.myapplication.ui.components.PhoneScreen
 import com.example.myapplication.viewmodel.AppViewModel
@@ -31,6 +30,7 @@ fun SyncCenterScreen(viewModel: AppViewModel) {
     var syncing by remember { mutableStateOf(false) }
     var synced by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val syncList = viewModel.syncItems
 
     PhoneScreen(
         title = "Sincronización",
@@ -109,46 +109,55 @@ fun SyncCenterScreen(viewModel: AppViewModel) {
                     .background(Color(0xFF1E293B))
                     .border(1.dp, Color(0xFF334155), RoundedCornerShape(16.dp))
             ) {
-                MockRepository.syncItems.forEachIndexed { index, item ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(14.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                if (syncList.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(24.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Box(
+                        Text(text = "No hay registros pendientes de sincronización.", color = Color(0xFF94A3B8), fontSize = 11.sp)
+                    }
+                } else {
+                    syncList.forEachIndexed { index, item ->
+                        Row(
                             modifier = Modifier
-                                .size(32.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(if (viewModel.pending > 0) Color(0xFFFEF3C7) else Color(0xFFD1FAE5)),
-                            contentAlignment = Alignment.Center
+                                .fillMaxWidth()
+                                .padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                if (viewModel.pending > 0) Icons.Filled.Schedule else Icons.Filled.CheckCircle,
-                                contentDescription = null,
-                                tint = if (viewModel.pending > 0) Color(0xFFD97706) else Color(0xFF059669),
-                                modifier = Modifier.size(16.dp)
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (viewModel.pending > 0) Color(0xFFFEF3C7) else Color(0xFFD1FAE5)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    if (viewModel.pending > 0) Icons.Filled.Schedule else Icons.Filled.CheckCircle,
+                                    contentDescription = null,
+                                    tint = if (viewModel.pending > 0) Color(0xFFD97706) else Color(0xFF059669),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(text = item.tipo, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Text(text = item.detalle, color = Color(0xFF94A3B8), fontSize = 9.sp)
+                            }
+                            Text(
+                                text = if (viewModel.pending > 0) "Pendiente" else "Enviado",
+                                color = if (viewModel.pending > 0) Color(0xFFF59E0B) else Color(0xFF10B981),
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold
                             )
                         }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(text = item.tipo, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                            Text(text = item.detalle, color = Color(0xFF94A3B8), fontSize = 9.sp)
+                        if (index < syncList.size - 1) {
+                            HorizontalDivider(color = Color(0xFF334155))
                         }
-                        Text(
-                            text = if (viewModel.pending > 0) "Pendiente" else "Enviado",
-                            color = if (viewModel.pending > 0) Color(0xFFF59E0B) else Color(0xFF10B981),
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    if (index < MockRepository.syncItems.size - 1) {
-                        HorizontalDivider(color = Color(0xFF334155))
                     }
                 }
             }
 
-            if (synced) {
+            if (synced || viewModel.pending == 0) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -163,7 +172,7 @@ fun SyncCenterScreen(viewModel: AppViewModel) {
 
             Button(
                 onClick = {
-                    if (online && !syncing && viewModel.pending > 0) {
+                    if (!syncing) {
                         syncing = true
                         scope.launch {
                             delay(900)
@@ -173,7 +182,7 @@ fun SyncCenterScreen(viewModel: AppViewModel) {
                         }
                     }
                 },
-                enabled = online && !syncing && viewModel.pending > 0,
+                enabled = !syncing && viewModel.pending > 0,
                 modifier = Modifier.fillMaxWidth().height(48.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0EA5E9)),
                 shape = RoundedCornerShape(12.dp)
@@ -181,7 +190,7 @@ fun SyncCenterScreen(viewModel: AppViewModel) {
                 Icon(Icons.Filled.Refresh, contentDescription = null, tint = Color.White)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = if (syncing) "Sincronizando..." else if (viewModel.pending == 0) "Todo sincronizado" else "Sincronizar ahora",
+                    text = if (syncing) "Sincronizando..." else if (viewModel.pending == 0) "Todo sincronizado" else "Sincronizar ahora / Reintentar",
                     color = Color.White,
                     fontWeight = FontWeight.Bold
                 )
@@ -193,7 +202,7 @@ fun SyncCenterScreen(viewModel: AppViewModel) {
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
             ) {
-                Text("Volver al jornada")
+                Text("Volver a mi jornada")
             }
         }
     }
