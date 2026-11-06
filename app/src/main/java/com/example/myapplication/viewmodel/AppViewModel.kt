@@ -5,7 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
-import com.example.myapplication.data.MockRepository
+import com.example.myapplication.data.repository.MockRepository
 import com.example.myapplication.data.repository.OtRepository
 import com.example.myapplication.model.OT
 import com.example.myapplication.model.SyncItem
