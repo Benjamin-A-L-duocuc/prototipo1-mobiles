@@ -6,6 +6,7 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import com.example.myapplication.data.repository.MockRepository
+import com.example.myapplication.model.CheckIn
 import com.example.myapplication.model.Evidence
 import com.example.myapplication.model.OT
 import com.example.myapplication.model.SyncItem
@@ -14,7 +15,7 @@ class LocalDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
 
     companion object {
         private const val DATABASE_NAME = "prototipo_acis.db"
-        private const val DATABASE_VERSION = 4
+        private const val DATABASE_VERSION = 5
 
         // Tables
         private const val TABLE_OT = "ots"
@@ -24,6 +25,7 @@ class LocalDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
         private const val TABLE_SYNC = "sync_items"
         private const val TABLE_USER = "users"
         private const val TABLE_EVIDENCE = "evidence"
+        private const val TABLE_CHECKIN = "check_ins"
     }
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -110,6 +112,17 @@ class LocalDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
             )
         """)
 
+        // 8. Check-in Table (EP-02)
+        db.execSQL("""
+            CREATE TABLE $TABLE_CHECKIN (
+                ot_id TEXT PRIMARY KEY,
+                latitude REAL NOT NULL,
+                longitude REAL NOT NULL,
+                accuracy REAL NOT NULL,
+                created_at INTEGER NOT NULL
+            )
+        """)
+
         // Seed initial data
         seedData(db)
     }
@@ -121,6 +134,17 @@ class LocalDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     ot_id TEXT NOT NULL,
                     path TEXT NOT NULL,
+                    created_at INTEGER NOT NULL
+                )
+            """)
+        }
+        if (oldVersion < 5) {
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS $TABLE_CHECKIN (
+                    ot_id TEXT PRIMARY KEY,
+                    latitude REAL NOT NULL,
+                    longitude REAL NOT NULL,
+                    accuracy REAL NOT NULL,
                     created_at INTEGER NOT NULL
                 )
             """)
@@ -284,6 +308,7 @@ class LocalDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
     fun deleteOt(id: String) {
         val db = writableDatabase
         db.delete(TABLE_EVIDENCE, "ot_id = ?", arrayOf(id))
+        db.delete(TABLE_CHECKIN, "ot_id = ?", arrayOf(id))
         db.delete(TABLE_OT, "id = ?", arrayOf(id))
     }
 
@@ -362,5 +387,36 @@ class LocalDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
 
     fun deleteEvidence(id: Long) {
         writableDatabase.delete(TABLE_EVIDENCE, "id = ?", arrayOf(id.toString()))
+    }
+
+    fun getCheckIn(otId: String): CheckIn? {
+        val cursor = readableDatabase.rawQuery(
+            "SELECT * FROM $TABLE_CHECKIN WHERE ot_id = ?",
+            arrayOf(otId)
+        )
+        cursor.use {
+            return if (it.moveToFirst()) {
+                CheckIn(
+                    otId = it.getString(it.getColumnIndexOrThrow("ot_id")),
+                    latitude = it.getDouble(it.getColumnIndexOrThrow("latitude")),
+                    longitude = it.getDouble(it.getColumnIndexOrThrow("longitude")),
+                    accuracy = it.getFloat(it.getColumnIndexOrThrow("accuracy")),
+                    createdAt = it.getLong(it.getColumnIndexOrThrow("created_at"))
+                )
+            } else {
+                null
+            }
+        }
+    }
+
+    fun addCheckIn(otId: String, latitude: Double, longitude: Double, accuracy: Float, createdAt: Long) {
+        val values = ContentValues().apply {
+            put("ot_id", otId)
+            put("latitude", latitude)
+            put("longitude", longitude)
+            put("accuracy", accuracy)
+            put("created_at", createdAt)
+        }
+        writableDatabase.insertWithOnConflict(TABLE_CHECKIN, null, values, SQLiteDatabase.CONFLICT_REPLACE)
     }
 }

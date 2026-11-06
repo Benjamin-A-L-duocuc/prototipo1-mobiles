@@ -35,6 +35,14 @@ data class Evidence(
     val createdAt: Long
 )
 
+data class CheckIn(
+    val otId: String,
+    val latitude: Double,
+    val longitude: Double,
+    val accuracy: Float,
+    val createdAt: Long
+)
+
 data class TimelineItem(
     val hito: String,
     val fecha: String,

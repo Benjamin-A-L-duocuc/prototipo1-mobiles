@@ -8,6 +8,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myapplication.data.repository.MockRepository
 import com.example.myapplication.data.repository.OtRepository
+import com.example.myapplication.model.CheckIn
 import com.example.myapplication.model.Evidence
 import com.example.myapplication.model.OT
 import com.example.myapplication.model.SyncItem
@@ -44,6 +45,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     var evidenceList by mutableStateOf<List<Evidence>>(emptyList())
         private set
 
+    var selectedCheckIn by mutableStateOf<CheckIn?>(null)
+        private set
+
     val pending: Int
         get() = syncItems.size
 
@@ -65,7 +69,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         selectedOtId = otList.firstOrNull()?.id ?: MockRepository.defaultOT.id
-        evidenceList = repository.getEvidence(selectedOtId)
+        refreshSelectedOtData()
         viewModelScope.launch {
             networkMonitor.isOnline.collect { isOnline ->
                 connection = if (isOnline) "online" else "offline"
@@ -80,7 +84,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun selectOt(id: String) {
         selectedOtId = id
-        evidenceList = repository.getEvidence(id)
+        refreshSelectedOtData()
+    }
+
+    private fun refreshSelectedOtData() {
+        evidenceList = repository.getEvidence(selectedOtId)
+        selectedCheckIn = repository.getCheckIn(selectedOtId)
     }
 
     fun login(role: String, username: String = ""): String {
@@ -106,7 +115,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         currentUserUsername = "cristian.rojas"
         currentUserName = "Cristian Rojas"
         selectedOtId = repository.getOts().firstOrNull()?.id ?: MockRepository.defaultOT.id
-        evidenceList = repository.getEvidence(selectedOtId)
+        refreshSelectedOtData()
     }
 
     fun changeScenario(newScenario: String) {
@@ -118,11 +127,13 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         otList = repository.getOts()
     }
 
-    fun doCheckIn() {
+    fun doCheckIn(latitude: Double, longitude: Double, accuracy: Float, timestamp: Long = System.currentTimeMillis()) {
+        repository.addCheckIn(selectedOtId, latitude, longitude, accuracy, timestamp)
         repository.updateEstado(selectedOtId, "En ejecución")
         repository.addSyncItem("Check-in", "Check-in registrado para $selectedOtId", "checkin")
         syncItems = repository.getSyncItems()
         otList = repository.getOts()
+        selectedCheckIn = repository.getCheckIn(selectedOtId)
     }
 
     fun syncAll() {
@@ -152,7 +163,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         if (selectedOtId == id) {
             selectedOtId = otList.firstOrNull()?.id ?: ""
         }
-        evidenceList = repository.getEvidence(selectedOtId)
+        refreshSelectedOtData()
     }
 
     fun updateOtState(id: String, estado: String) {

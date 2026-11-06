@@ -2,6 +2,7 @@ package com.example.myapplication.data.repository
 
 import android.content.Context
 import com.example.myapplication.data.LocalDatabaseHelper
+import com.example.myapplication.model.CheckIn
 import com.example.myapplication.model.Evidence
 import com.example.myapplication.model.OT
 import com.example.myapplication.model.SyncItem
@@ -45,4 +46,9 @@ class OtRepository(context: Context) {
         dbHelper.addEvidence(otId, path, createdAt)
 
     fun deleteEvidence(id: Long) = dbHelper.deleteEvidence(id)
+
+    fun getCheckIn(otId: String): CheckIn? = dbHelper.getCheckIn(otId)
+
+    fun addCheckIn(otId: String, latitude: Double, longitude: Double, accuracy: Float, createdAt: Long) =
+        dbHelper.addCheckIn(otId, latitude, longitude, accuracy, createdAt)
 }

@@ -22,13 +22,18 @@ import com.example.myapplication.navigation.Rutas
 import com.example.myapplication.ui.components.OfflineBanner
 import com.example.myapplication.ui.components.PhoneScreen
 import com.example.myapplication.viewmodel.AppViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun TecnicoCierreScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
     var signed by remember { mutableStateOf(false) }
     var conforme by remember { mutableStateOf(true) }
+    var closedAt by remember { mutableStateOf<Long?>(null) }
     val cliente = MockRepository.cliente
     val ot = viewModel.selectedOT
+    val checkInAt = viewModel.selectedCheckIn?.createdAt
 
     PhoneScreen(
         title = "Cierre de OT",
@@ -63,7 +68,7 @@ fun TecnicoCierreScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
                             .padding(10.dp)
                     ) {
                         Text(text = "CHECK-IN", color = Color(0xFF64748B), fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                        Text(text = "09:41", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text(text = checkInAt?.let(::formatCierreTime) ?: "--:--", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
                     Column(
                         modifier = Modifier
@@ -73,7 +78,7 @@ fun TecnicoCierreScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
                             .padding(10.dp)
                     ) {
                         Text(text = "CHECK-OUT", color = Color(0xFF64748B), fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                        Text(text = "10:35", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text(text = closedAt?.let(::formatCierreTime) ?: "--:--", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
                 }
 
@@ -97,7 +102,7 @@ fun TecnicoCierreScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
                             .padding(10.dp)
                     ) {
                         Text(text = "EVIDENCIAS", color = Color(0xFF64748B), fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                        Text(text = "2 fotografías", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "${viewModel.evidenceList.size} fotografías", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -127,7 +132,7 @@ fun TecnicoCierreScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
                             .padding(12.dp)
                     ) {
                         Column {
-                            Text(text = "OT cerrada y firmada por ${cliente.nombre} a las 10:36.", color = Color(0xFF6EE7B7), fontSize = 11.sp)
+                            Text(text = "OT cerrada y firmada por ${cliente.nombre} a las ${closedAt?.let(::formatCierreTime) ?: "--:--"}.", color = Color(0xFF6EE7B7), fontSize = 11.sp)
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(text = "María Soto", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                             Text(text = "Firma digital registrada · ${cliente.cargo}", color = Color(0xFF94A3B8), fontSize = 9.sp)
@@ -173,7 +178,10 @@ fun TecnicoCierreScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
                     Spacer(modifier = Modifier.height(10.dp))
 
                     Button(
-                        onClick = { signed = true },
+                        onClick = {
+                            closedAt = System.currentTimeMillis()
+                            signed = true
+                        },
                         enabled = conforme,
                         modifier = Modifier.fillMaxWidth().height(48.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0EA5E9)),
@@ -188,3 +196,6 @@ fun TecnicoCierreScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
         }
     }
 }
+
+private fun formatCierreTime(timestamp: Long): String =
+    SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(timestamp))
