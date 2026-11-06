@@ -35,8 +35,33 @@ fun JefeCrearOTScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
     var equipoInput by remember { mutableStateOf("Cámara frigorífica 4 puertas") }
     var descripcionInput by remember { mutableStateOf("Mantención y revisión general solicitada por local.") }
     var createdOtId by remember { mutableStateOf("OT-1046") }
+    var clienteTouched by remember { mutableStateOf(false) }
+    var equipoTouched by remember { mutableStateOf(false) }
+    var descripcionTouched by remember { mutableStateOf(false) }
 
     val sinDisponibilidad = disponible == "no"
+    val clienteError = when {
+        !clienteTouched -> null
+        clienteInput.trim().isEmpty() -> "Ingresa el cliente o empresa."
+        clienteInput.trim().length < 3 -> "El cliente debe tener al menos 3 caracteres."
+        else -> null
+    }
+    val equipoError = when {
+        !equipoTouched -> null
+        equipoInput.trim().isEmpty() -> "Ingresa el equipo o activo."
+        equipoInput.trim().length < 3 -> "El equipo debe tener al menos 3 caracteres."
+        else -> null
+    }
+    val descripcionError = when {
+        !descripcionTouched -> null
+        descripcionInput.trim().isEmpty() -> "Describe el problema o trabajo solicitado."
+        descripcionInput.trim().length < 10 -> "La descripción debe tener al menos 10 caracteres."
+        descripcionInput.trim().length > 300 -> "La descripción no puede superar los 300 caracteres."
+        else -> null
+    }
+    val formularioValido = clienteInput.trim().length >= 3 &&
+        equipoInput.trim().length >= 3 &&
+        descripcionInput.trim().length in 10..300
 
     if (creada) {
         PhoneScreen(
@@ -146,12 +171,23 @@ fun JefeCrearOTScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
 
                 OutlinedTextField(
                     value = clienteInput,
-                    onValueChange = { clienteInput = it },
+                    onValueChange = {
+                        clienteInput = it
+                        clienteTouched = true
+                    },
                     label = { Text("Cliente / Empresa", color = Color(0xFF94A3B8), fontSize = 11.sp) },
                     modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    isError = clienteError != null,
+                    supportingText = {
+                        if (clienteError != null) {
+                            Text(text = clienteError, color = Color(0xFFFCA5A5), fontSize = 10.sp)
+                        }
+                    },
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Color(0xFF0EA5E9),
                         unfocusedBorderColor = Color(0xFF334155),
+                        errorBorderColor = Color(0xFFEF4444),
                         focusedTextColor = Color.White,
                         unfocusedTextColor = Color.White
                     ),
@@ -160,12 +196,23 @@ fun JefeCrearOTScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
 
                 OutlinedTextField(
                     value = equipoInput,
-                    onValueChange = { equipoInput = it },
+                    onValueChange = {
+                        equipoInput = it
+                        equipoTouched = true
+                    },
                     label = { Text("Equipo / Activo", color = Color(0xFF94A3B8), fontSize = 11.sp) },
                     modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    isError = equipoError != null,
+                    supportingText = {
+                        if (equipoError != null) {
+                            Text(text = equipoError, color = Color(0xFFFCA5A5), fontSize = 10.sp)
+                        }
+                    },
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Color(0xFF0EA5E9),
                         unfocusedBorderColor = Color(0xFF334155),
+                        errorBorderColor = Color(0xFFEF4444),
                         focusedTextColor = Color.White,
                         unfocusedTextColor = Color.White
                     ),
@@ -174,12 +221,26 @@ fun JefeCrearOTScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
 
                 OutlinedTextField(
                     value = descripcionInput,
-                    onValueChange = { descripcionInput = it },
+                    onValueChange = {
+                        descripcionInput = it
+                        descripcionTouched = true
+                    },
                     label = { Text("Descripción del problema", color = Color(0xFF94A3B8), fontSize = 11.sp) },
                     modifier = Modifier.fillMaxWidth(),
+                    minLines = 3,
+                    maxLines = 5,
+                    isError = descripcionError != null,
+                    supportingText = {
+                        if (descripcionError != null) {
+                            Text(text = descripcionError, color = Color(0xFFFCA5A5), fontSize = 10.sp)
+                        } else {
+                            Text(text = "${descripcionInput.length}/300", color = Color(0xFF64748B), fontSize = 10.sp)
+                        }
+                    },
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Color(0xFF0EA5E9),
                         unfocusedBorderColor = Color(0xFF334155),
+                        errorBorderColor = Color(0xFFEF4444),
                         focusedTextColor = Color.White,
                         unfocusedTextColor = Color.White
                     ),
@@ -276,21 +337,27 @@ fun JefeCrearOTScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
 
             Button(
                 onClick = {
+                    clienteTouched = true
+                    equipoTouched = true
+                    descripcionTouched = true
+                    if (!formularioValido) {
+                        return@Button
+                    }
                     createdOtId = viewModel.nextOtId()
                     val nextIdNum = createdOtId.removePrefix("OT-").toIntOrNull() ?: 1046
                     val newOt = OT(
                         id = createdOtId,
-                        cliente = clienteInput.ifBlank { "Cliente General" },
+                        cliente = clienteInput.trim(),
                         local = "Local Principal",
                         direccion = "Av. Principal 123",
-                        equipo = equipoInput.ifBlank { "Equipo Climatización" },
+                        equipo = equipoInput.trim(),
                         equipoId = "EQ-${100 + nextIdNum % 100}",
                         tipo = tipo.replaceFirstChar { it.uppercase() },
                         prioridad = prioridad.replaceFirstChar { it.uppercase() },
                         estado = if (sinDisponibilidad) "Pendiente" else "Asignada",
                         sla = "2h",
                         distancia = "3,2 km",
-                        descripcion = descripcionInput.ifBlank { "Orden de trabajo creada desde panel de jefatura." },
+                        descripcion = descripcionInput.trim(),
                         exterior = false
                     )
                     viewModel.addNewOt(newOt)
