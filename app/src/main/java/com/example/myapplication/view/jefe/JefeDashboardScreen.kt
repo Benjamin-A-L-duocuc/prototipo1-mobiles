@@ -11,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.Assignment
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -124,7 +125,15 @@ fun JefeDashboardScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
 
     PhoneScreen(
         title = "Panel de mantenimiento",
-        subtitle = "Jueves 27 de octubre"
+        subtitle = "Jueves 27 de octubre",
+        actions = {
+            IconButton(onClick = {
+                viewModel.logout()
+                onNavigate(Rutas.LOGIN)
+            }) {
+                Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Cerrar sesión", tint = Color.White)
+            }
+        }
     ) {
         Column(
             modifier = Modifier

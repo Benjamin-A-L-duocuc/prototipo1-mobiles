@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,13 +20,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myapplication.data.repository.MockRepository
+import com.example.myapplication.navigation.Rutas
 import com.example.myapplication.ui.components.PhoneScreen
 import com.example.myapplication.ui.components.PriorityBadge
 import com.example.myapplication.ui.components.StatusBadge
 import com.example.myapplication.viewmodel.AppViewModel
 
 @Composable
-fun ClienteSeguimientoScreen(viewModel: AppViewModel) {
+fun ClienteSeguimientoScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
     var signed by remember { mutableStateOf(false) }
     var conforme by remember { mutableStateOf(true) }
     var clientNameInput by remember { mutableStateOf(viewModel.currentUserName) }
@@ -35,7 +37,15 @@ fun ClienteSeguimientoScreen(viewModel: AppViewModel) {
 
     PhoneScreen(
         title = "Seguimiento OT",
-        subtitle = "${ot.id} · ${ot.cliente}"
+        subtitle = "${ot.id} · ${ot.cliente}",
+        actions = {
+            IconButton(onClick = {
+                viewModel.logout()
+                onNavigate(Rutas.LOGIN)
+            }) {
+                Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Cerrar sesión", tint = Color.White)
+            }
+        }
     ) {
         Column(
             modifier = Modifier

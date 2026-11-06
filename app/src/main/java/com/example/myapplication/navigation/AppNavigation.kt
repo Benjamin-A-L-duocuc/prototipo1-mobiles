@@ -68,7 +68,7 @@ fun AppNavigation(viewModel: AppViewModel) {
                 JefeAgendaScreen(viewModel = viewModel, onNavigate = navigate)
             }
             composable(Rutas.CLIENTE) {
-                ClienteSeguimientoScreen(viewModel = viewModel)
+                ClienteSeguimientoScreen(viewModel = viewModel, onNavigate = navigate)
             }
         }
     }
