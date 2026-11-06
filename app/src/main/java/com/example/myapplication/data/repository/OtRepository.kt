@@ -2,6 +2,7 @@ package com.example.myapplication.data.repository
 
 import android.content.Context
 import com.example.myapplication.data.LocalDatabaseHelper
+import com.example.myapplication.model.Evidence
 import com.example.myapplication.model.OT
 import com.example.myapplication.model.SyncItem
 
@@ -37,4 +38,11 @@ class OtRepository(context: Context) {
     fun clearSyncQueue() {
         dbHelper.clearSyncItems()
     }
+
+    fun getEvidence(otId: String): List<Evidence> = dbHelper.getEvidence(otId)
+
+    fun addEvidence(otId: String, path: String, createdAt: Long): Long =
+        dbHelper.addEvidence(otId, path, createdAt)
+
+    fun deleteEvidence(id: Long) = dbHelper.deleteEvidence(id)
 }

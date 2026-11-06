@@ -6,6 +6,7 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import com.example.myapplication.data.repository.MockRepository
+import com.example.myapplication.model.Evidence
 import com.example.myapplication.model.OT
 import com.example.myapplication.model.SyncItem
 
@@ -13,7 +14,7 @@ class LocalDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
 
     companion object {
         private const val DATABASE_NAME = "prototipo_acis.db"
-        private const val DATABASE_VERSION = 3
+        private const val DATABASE_VERSION = 4
 
         // Tables
         private const val TABLE_OT = "ots"
@@ -22,6 +23,7 @@ class LocalDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
         private const val TABLE_MATERIAL = "materials"
         private const val TABLE_SYNC = "sync_items"
         private const val TABLE_USER = "users"
+        private const val TABLE_EVIDENCE = "evidence"
     }
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -98,18 +100,31 @@ class LocalDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
             )
         """)
 
+        // 7. Evidence Table (EP-02)
+        db.execSQL("""
+            CREATE TABLE $TABLE_EVIDENCE (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ot_id TEXT NOT NULL,
+                path TEXT NOT NULL,
+                created_at INTEGER NOT NULL
+            )
+        """)
+
         // Seed initial data
         seedData(db)
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_OT")
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_CLIENT")
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_EQUIPMENT")
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_MATERIAL")
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_SYNC")
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_USER")
-        onCreate(db)
+        if (oldVersion < 4) {
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS $TABLE_EVIDENCE (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ot_id TEXT NOT NULL,
+                    path TEXT NOT NULL,
+                    created_at INTEGER NOT NULL
+                )
+            """)
+        }
     }
 
     private fun seedData(db: SQLiteDatabase) {
@@ -268,6 +283,7 @@ class LocalDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
 
     fun deleteOt(id: String) {
         val db = writableDatabase
+        db.delete(TABLE_EVIDENCE, "ot_id = ?", arrayOf(id))
         db.delete(TABLE_OT, "id = ?", arrayOf(id))
     }
 
@@ -312,5 +328,39 @@ class LocalDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
     fun clearSyncItems() {
         val db = writableDatabase
         db.delete(TABLE_SYNC, null, null)
+    }
+
+    fun getEvidence(otId: String): List<Evidence> {
+        val list = mutableListOf<Evidence>()
+        val cursor = readableDatabase.rawQuery(
+            "SELECT * FROM $TABLE_EVIDENCE WHERE ot_id = ? ORDER BY created_at ASC",
+            arrayOf(otId)
+        )
+        cursor.use {
+            while (it.moveToNext()) {
+                list.add(
+                    Evidence(
+                        id = it.getLong(it.getColumnIndexOrThrow("id")),
+                        otId = it.getString(it.getColumnIndexOrThrow("ot_id")),
+                        path = it.getString(it.getColumnIndexOrThrow("path")),
+                        createdAt = it.getLong(it.getColumnIndexOrThrow("created_at"))
+                    )
+                )
+            }
+        }
+        return list
+    }
+
+    fun addEvidence(otId: String, path: String, createdAt: Long): Long {
+        val values = ContentValues().apply {
+            put("ot_id", otId)
+            put("path", path)
+            put("created_at", createdAt)
+        }
+        return writableDatabase.insert(TABLE_EVIDENCE, null, values)
+    }
+
+    fun deleteEvidence(id: Long) {
+        writableDatabase.delete(TABLE_EVIDENCE, "id = ?", arrayOf(id.toString()))
     }
 }

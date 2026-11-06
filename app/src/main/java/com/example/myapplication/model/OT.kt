@@ -28,6 +28,13 @@ data class SyncItem(
     val icono: String
 )
 
+data class Evidence(
+    val id: Long,
+    val otId: String,
+    val path: String,
+    val createdAt: Long
+)
+
 data class TimelineItem(
     val hito: String,
     val fecha: String,

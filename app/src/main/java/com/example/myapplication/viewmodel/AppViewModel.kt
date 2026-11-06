@@ -8,10 +8,12 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myapplication.data.repository.MockRepository
 import com.example.myapplication.data.repository.OtRepository
+import com.example.myapplication.model.Evidence
 import com.example.myapplication.model.OT
 import com.example.myapplication.model.SyncItem
 import com.example.myapplication.navigation.Rutas
 import com.example.myapplication.util.NetworkMonitor
+import java.io.File
 import kotlinx.coroutines.launch
 
 class AppViewModel(application: Application) : AndroidViewModel(application) {
@@ -39,6 +41,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     var syncItems by mutableStateOf(repository.getSyncItems())
         private set
 
+    var evidenceList by mutableStateOf<List<Evidence>>(emptyList())
+        private set
+
     val pending: Int
         get() = syncItems.size
 
@@ -59,6 +64,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         get() = otList.count { it.prioridad == "Alta" && it.estado != "Cerrada" && it.estado != "Conformada" }
 
     init {
+        selectedOtId = otList.firstOrNull()?.id ?: MockRepository.defaultOT.id
+        evidenceList = repository.getEvidence(selectedOtId)
         viewModelScope.launch {
             networkMonitor.isOnline.collect { isOnline ->
                 connection = if (isOnline) "online" else "offline"
@@ -73,6 +80,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun selectOt(id: String) {
         selectedOtId = id
+        evidenceList = repository.getEvidence(id)
     }
 
     fun login(role: String, username: String = ""): String {
@@ -98,6 +106,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         currentUserUsername = "cristian.rojas"
         currentUserName = "Cristian Rojas"
         selectedOtId = repository.getOts().firstOrNull()?.id ?: MockRepository.defaultOT.id
+        evidenceList = repository.getEvidence(selectedOtId)
     }
 
     fun changeScenario(newScenario: String) {
@@ -137,15 +146,30 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun deleteOt(id: String) {
+        repository.getEvidence(id).forEach { File(it.path).delete() }
         repository.deleteOt(id)
         otList = repository.getOts()
         if (selectedOtId == id) {
             selectedOtId = otList.firstOrNull()?.id ?: ""
         }
+        evidenceList = repository.getEvidence(selectedOtId)
     }
 
     fun updateOtState(id: String, estado: String) {
         repository.updateEstado(id, estado)
         otList = repository.getOts()
+    }
+
+    fun addEvidence(path: String) {
+        repository.addEvidence(selectedOtId, path, System.currentTimeMillis())
+        evidenceList = repository.getEvidence(selectedOtId)
+        repository.addSyncItem("Evidencia", "Fotografía adjuntada a $selectedOtId", "camera")
+        syncItems = repository.getSyncItems()
+    }
+
+    fun deleteEvidence(evidence: Evidence) {
+        repository.deleteEvidence(evidence.id)
+        File(evidence.path).delete()
+        evidenceList = repository.getEvidence(selectedOtId)
     }
 }
