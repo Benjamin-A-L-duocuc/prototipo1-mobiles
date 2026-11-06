@@ -121,7 +121,7 @@ These areas must not be treated as complete:
 - Diagnosis, activities and materials: stored only in screen-local Compose state.
 - Evidence records: not persisted.
 - Closing an OT: does not set state `Cerrada`, does not validate evidence and does not record close time.
-- Offline sync: waiting is simulated with a delay; queue clearing is local only. There is no backend, retry policy or conflict resolution.
+- Offline sync: waiting is simulated with a delay; queue clearing is local only and the UI blocks syncing while offline. There is no backend, retry policy or conflict resolution.
 - Connectivity: `NetworkMonitor` updates `AppViewModel.connection`, but synchronization is not automatic.
 - Weather: no public weather API integration. The rain UI exists, but there is no control in the app to activate the `lluvia` scenario.
 - SLA: dashboard compliance is clamped to a minimum of 85% and is not calculated from real timestamps.
