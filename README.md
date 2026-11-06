@@ -2,7 +2,7 @@
 
 Aplicación Android para la gestión de órdenes de trabajo en terreno (DSY1105).
 
-El proyecto se encuentra en refactorización desde un prototipo visual hacia una aplicación funcional con persistencia local. La interfaz de los tres perfiles está implementada y una parte del flujo ya persiste en SQLite; el resto del dominio todavía es estático o simulado.
+El proyecto se encuentra en refactorización desde un prototipo visual hacia una aplicación funcional con persistencia local. La interfaz de los tres perfiles está implementada y el flujo técnico ya integra cámara y GPS reales; algunos módulos de planificación y sincronización siguen siendo locales o simulados.
 
 ## Stack
 
@@ -35,34 +35,36 @@ app/build/outputs/apk/debug/app-debug.apk
 
 ## Usuarios demo
 
-| Usuario | Rol |
-| --- | --- |
-| `cristian.rojas` | Técnico de terreno |
-| `gerardo.jefe` | Jefe de mantenimiento |
-| `maria.cliente` | Cliente |
+| Usuario | Rol | Contraseña |
+| --- | --- | --- |
+| `cristian.rojas` | Técnico de terreno | `password123` |
+| `gerardo.jefe` | Jefe de mantenimiento | `password123` |
+| `maria.cliente` | Cliente | `password123` |
 
-La pantalla de login valida usuario y rol contra SQLite. La validación de contraseña todavía no está implementada.
+El login valida usuario, rol y contraseña contra SQLite. Las contraseñas se almacenan como hash SHA-256 y los formularios usan validadores centralizados.
 
 ## Funcionalidades actuales
 
-- Login por rol con usuarios almacenados en SQLite.
-- Navegación con `NavHost` y pila de navegación real.
+- Login por rol con credenciales almacenadas y validadas en SQLite.
+- Formularios con validación por campo, mensajes de error, íconos y retroalimentación visual.
+- Navegación con `NavHost`, pila real y transiciones animadas.
 - Listado de OT desde SQLite.
 - Creación, edición y eliminación de OT desde el panel de jefatura.
 - Cambio de estado de OT (asignada, aceptada, en ejecución, conformada).
+- Check-in con GPS real del dispositivo, permisos de ubicación y persistencia local.
+- Evidencias fotográficas con cámara real, permisos, miniaturas y persistencia local.
 - Registro de conformidad del cliente en SQLite.
 - Cola de sincronización local básica.
 - Detección de conectividad con `NetworkMonitor`.
 
 ## Limitaciones conocidas
 
-- Cámara, GPS, check-in, check-out y evidencias todavía son simulados.
 - Diagnóstico, actividades y materiales no se persisten.
 - La sincronización offline no tiene backend ni resolución de conflictos.
 - Las alertas meteorológicas y el cálculo de SLA son estáticos.
 - Los catálogos de clientes, locales y equipos no tienen CRUD.
-- No existen marcas de tiempo ni historial de estados.
-- Las pruebas automatizadas son mínimas.
+- No existen marcas de tiempo ni historial completo de estados.
+- La firma de conformidad es un placeholder, aunque el estado de conformidad sí persiste.
 
 ## Estructura
 
@@ -83,7 +85,11 @@ app/src/main/java/com/example/myapplication/
 │   ├── components/
 │   └── theme/
 ├── util/
-│   └── NetworkMonitor.kt
+│   ├── LocationProvider.kt
+│   ├── NetworkMonitor.kt
+│   └── PasswordHasher.kt
+├── validation/
+│   └── Validators.kt
 ├── view/
 │   ├── auth/
 │   ├── cliente/
@@ -97,9 +103,11 @@ app/src/main/java/com/example/myapplication/
 ## Pruebas
 
 ```powershell
-.\gradlew.bat testDebugUnitTest
+.\gradlew.bat assembleDebug testDebugUnitTest lintDebug
 ```
+
+Las pruebas unitarias cubren invariantes del repositorio demo, el hasher de contraseñas y los validadores de formularios.
 
 ## Contexto del proyecto
 
-Ver `PROJECT_CONTEXT.md` para el detalle de la arquitectura, el estado real y el backlog de trabajo.
+La fuente de verdad del estado actual es el código, las pruebas y el material de contexto de la asignatura. `PROJECT_CONTEXT.md` puede estar desactualizado.
