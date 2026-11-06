@@ -2,7 +2,6 @@ package com.example.myapplication.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -65,23 +64,6 @@ fun PhoneScreen(
             content = content
         )
     }
-}
-
-@Composable
-fun CardBox(
-    modifier: Modifier = Modifier,
-    onClick: (() -> Unit)? = null,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    val mod = modifier
-        .fillMaxWidth()
-        .clip(RoundedCornerShape(16.dp))
-        .background(Color(0xFF1E293B))
-        .border(1.dp, Color(0xFF334155), RoundedCornerShape(16.dp))
-        .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-        .padding(16.dp)
-
-    Column(modifier = mod, content = content)
 }
 
 @Composable
