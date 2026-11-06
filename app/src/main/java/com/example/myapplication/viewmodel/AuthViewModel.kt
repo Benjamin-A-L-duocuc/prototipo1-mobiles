@@ -13,18 +13,33 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     private val _loginError = MutableStateFlow<String?>(null)
     val loginError: StateFlow<String?> = _loginError.asStateFlow()
 
-    fun login(username: String, role: String): Boolean {
-        val db = dbHelper.readableDatabase
-        val cursor = db.rawQuery("SELECT * FROM users WHERE username = ? AND role = ?", arrayOf(username.trim().lowercase(), role))
-        val found = cursor.moveToFirst()
-        cursor.close()
+    fun login(username: String, password: String, role: String): Boolean {
+        val normalizedUsername = username.trim().lowercase()
+        when {
+            normalizedUsername.isEmpty() -> {
+                _loginError.value = "Ingresa tu usuario."
+                return false
+            }
+            password.isEmpty() -> {
+                _loginError.value = "Ingresa tu contraseña."
+                return false
+            }
+            password.length < 8 -> {
+                _loginError.value = "La contraseña debe tener al menos 8 caracteres."
+                return false
+            }
+        }
 
-        if (found) {
+        return if (dbHelper.validateUser(normalizedUsername, role, password)) {
             _loginError.value = null
-            return true
+            true
         } else {
             _loginError.value = "Credenciales inválidas para el rol seleccionado."
-            return false
+            false
         }
+    }
+
+    fun clearLoginError() {
+        _loginError.value = null
     }
 }

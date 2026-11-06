@@ -10,12 +10,13 @@ import com.example.myapplication.model.CheckIn
 import com.example.myapplication.model.Evidence
 import com.example.myapplication.model.OT
 import com.example.myapplication.model.SyncItem
+import com.example.myapplication.util.PasswordHasher
 
 class LocalDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
     companion object {
         private const val DATABASE_NAME = "prototipo_acis.db"
-        private const val DATABASE_VERSION = 5
+        private const val DATABASE_VERSION = 6
 
         // Tables
         private const val TABLE_OT = "ots"
@@ -98,7 +99,8 @@ class LocalDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT,
                 role TEXT,
-                name TEXT
+                name TEXT,
+                password_hash TEXT NOT NULL DEFAULT ''
             )
         """)
 
@@ -148,6 +150,10 @@ class LocalDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
                     created_at INTEGER NOT NULL
                 )
             """)
+        }
+        if (oldVersion < 6) {
+            db.execSQL("ALTER TABLE $TABLE_USER ADD COLUMN password_hash TEXT NOT NULL DEFAULT ''")
+            db.execSQL("UPDATE $TABLE_USER SET password_hash = ?", arrayOf(PasswordHasher.hash("password123")))
         }
     }
 
@@ -224,12 +230,23 @@ class LocalDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
         }
 
         // Seed Users
-        val user1 = ContentValues().apply { put("username", "cristian.rojas"); put("role", "tecnico"); put("name", "Cristian Rojas") }
-        val user2 = ContentValues().apply { put("username", "gerardo.jefe"); put("role", "jefe"); put("name", "Gerardo Jefatura") }
-        val user3 = ContentValues().apply { put("username", "maria.cliente"); put("role", "cliente"); put("name", "María Soto") }
+        val passwordHash = PasswordHasher.hash("password123")
+        val user1 = ContentValues().apply { put("username", "cristian.rojas"); put("role", "tecnico"); put("name", "Cristian Rojas"); put("password_hash", passwordHash) }
+        val user2 = ContentValues().apply { put("username", "gerardo.jefe"); put("role", "jefe"); put("name", "Gerardo Jefatura"); put("password_hash", passwordHash) }
+        val user3 = ContentValues().apply { put("username", "maria.cliente"); put("role", "cliente"); put("name", "María Soto"); put("password_hash", passwordHash) }
         db.insert(TABLE_USER, null, user1)
         db.insert(TABLE_USER, null, user2)
         db.insert(TABLE_USER, null, user3)
+    }
+
+    fun validateUser(username: String, role: String, password: String): Boolean {
+        val cursor = readableDatabase.rawQuery(
+            "SELECT 1 FROM $TABLE_USER WHERE username = ? AND role = ? AND password_hash = ?",
+            arrayOf(username, role, PasswordHasher.hash(password))
+        )
+        cursor.use {
+            return it.moveToFirst()
+        }
     }
 
     fun getAllOts(): List<OT> {

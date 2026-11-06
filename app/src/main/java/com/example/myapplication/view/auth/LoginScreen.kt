@@ -1,13 +1,21 @@
 package com.example.myapplication.view.auth
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,7 +24,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -32,7 +43,17 @@ fun LoginScreen(
     var selectedRole by remember { mutableStateOf("tecnico") }
     var username by remember { mutableStateOf("cristian.rojas") }
     var password by remember { mutableStateOf("password123") }
+    var usernameTouched by remember { mutableStateOf(false) }
+    var passwordTouched by remember { mutableStateOf(false) }
+    var passwordVisible by remember { mutableStateOf(false) }
     val loginError by authViewModel.loginError.collectAsState()
+    val usernameError = if (usernameTouched && username.trim().isEmpty()) "Ingresa tu usuario." else null
+    val passwordError = when {
+        !passwordTouched -> null
+        password.isEmpty() -> "Ingresa tu contraseña."
+        password.length < 8 -> "La contraseña debe tener al menos 8 caracteres."
+        else -> null
+    }
 
     Box(
         modifier = Modifier
@@ -92,6 +113,9 @@ fun LoginScreen(
                                     "jefe" -> "gerardo.jefe"
                                     else -> "maria.cliente"
                                 }
+                                usernameTouched = false
+                                passwordTouched = false
+                                authViewModel.clearLoginError()
                             }
                             .padding(vertical = 8.dp),
                         contentAlignment = Alignment.Center
@@ -117,12 +141,26 @@ fun LoginScreen(
 
                 OutlinedTextField(
                     value = username,
-                    onValueChange = { username = it },
+                    onValueChange = {
+                        username = it
+                        usernameTouched = true
+                        authViewModel.clearLoginError()
+                    },
                     label = { Text("Usuario", color = Color(0xFF94A3B8), fontSize = 11.sp) },
                     modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    isError = usernameError != null,
+                    supportingText = {
+                        if (usernameError != null) {
+                            Text(text = usernameError, color = Color(0xFFFCA5A5), fontSize = 10.sp)
+                        }
+                    },
+                    leadingIcon = { Icon(Icons.Filled.Person, contentDescription = null, tint = Color(0xFF64748B)) },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Color(0xFF0EA5E9),
                         unfocusedBorderColor = Color(0xFF334155),
+                        errorBorderColor = Color(0xFFEF4444),
                         focusedTextColor = Color.White,
                         unfocusedTextColor = Color.White
                     ),
@@ -131,30 +169,71 @@ fun LoginScreen(
 
                 OutlinedTextField(
                     value = password,
-                    onValueChange = { password = it },
+                    onValueChange = {
+                        password = it
+                        passwordTouched = true
+                        authViewModel.clearLoginError()
+                    },
                     label = { Text("Contraseña", color = Color(0xFF94A3B8), fontSize = 11.sp) },
                     modifier = Modifier.fillMaxWidth(),
-                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    isError = passwordError != null,
+                    supportingText = {
+                        if (passwordError != null) {
+                            Text(text = passwordError, color = Color(0xFFFCA5A5), fontSize = 10.sp)
+                        }
+                    },
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = null, tint = Color(0xFF64748B)) },
+                    trailingIcon = {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(
+                                imageVector = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                contentDescription = if (passwordVisible) "Ocultar contraseña" else "Mostrar contraseña",
+                                tint = Color(0xFF64748B)
+                            )
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    ),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Color(0xFF0EA5E9),
                         unfocusedBorderColor = Color(0xFF334155),
+                        errorBorderColor = Color(0xFFEF4444),
                         focusedTextColor = Color.White,
                         unfocusedTextColor = Color.White
                     ),
                     textStyle = LocalTextStyle.current.copy(fontSize = 12.sp)
                 )
 
-                if (loginError != null) {
-                    Text(text = loginError!!, color = Color(0xFFEF4444), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                AnimatedVisibility(
+                    visible = loginError != null,
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    Text(
+                        text = loginError.orEmpty(),
+                        color = Color(0xFFEF4444),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Button(
                     onClick = {
-                        val success = authViewModel.login(username, selectedRole)
+                        usernameTouched = true
+                        passwordTouched = true
+                        val normalizedUsername = username.trim().lowercase()
+                        if (normalizedUsername.isEmpty() || password.length < 8) {
+                            return@Button
+                        }
+                        val success = authViewModel.login(normalizedUsername, password, selectedRole)
                         if (success) {
-                            onNavigate(viewModel.login(selectedRole, username))
+                            onNavigate(viewModel.login(selectedRole, normalizedUsername))
                         }
                     },
                     modifier = Modifier.fillMaxWidth().height(48.dp),
