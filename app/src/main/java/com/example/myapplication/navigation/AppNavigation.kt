@@ -1,5 +1,9 @@
 package com.example.myapplication.navigation
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,7 +37,34 @@ fun AppNavigation(viewModel: AppViewModel) {
     }
 
     Box(modifier = Modifier.fillMaxSize().background(Color(0xFF070D18))) {
-        NavHost(navController = navController, startDestination = Rutas.LOGIN) {
+        NavHost(
+            navController = navController,
+            startDestination = Rutas.LOGIN,
+            enterTransition = {
+                fadeIn(tween(220)) + slideIntoContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Left,
+                    tween(260)
+                )
+            },
+            exitTransition = {
+                fadeOut(tween(180)) + slideOutOfContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Left,
+                    tween(260)
+                )
+            },
+            popEnterTransition = {
+                fadeIn(tween(220)) + slideIntoContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Right,
+                    tween(260)
+                )
+            },
+            popExitTransition = {
+                fadeOut(tween(180)) + slideOutOfContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Right,
+                    tween(260)
+                )
+            }
+        ) {
             composable(Rutas.LOGIN) {
                 LoginScreen(viewModel = viewModel, onNavigate = navigate)
             }
