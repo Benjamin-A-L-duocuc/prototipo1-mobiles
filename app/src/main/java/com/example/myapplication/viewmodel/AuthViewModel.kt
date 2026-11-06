@@ -10,12 +10,6 @@ import kotlinx.coroutines.flow.asStateFlow
 class AuthViewModel(application: Application) : AndroidViewModel(application) {
     private val dbHelper = LocalDatabaseHelper(application)
 
-    private val _currentRole = MutableStateFlow("tecnico")
-    val currentRole: StateFlow<String> = _currentRole.asStateFlow()
-
-    private val _isLoggedIn = MutableStateFlow(false)
-    val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
-
     private val _loginError = MutableStateFlow<String?>(null)
     val loginError: StateFlow<String?> = _loginError.asStateFlow()
 
@@ -26,18 +20,11 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         cursor.close()
 
         if (found) {
-            _currentRole.value = role
-            _isLoggedIn.value = true
             _loginError.value = null
             return true
         } else {
             _loginError.value = "Credenciales inválidas para el rol seleccionado."
             return false
         }
-    }
-
-    fun logout() {
-        _isLoggedIn.value = false
-        _loginError.value = null
     }
 }

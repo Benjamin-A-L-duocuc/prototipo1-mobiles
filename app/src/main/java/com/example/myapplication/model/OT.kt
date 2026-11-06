@@ -16,15 +16,6 @@ data class OT(
     val exterior: Boolean
 )
 
-data class AgendaItem(
-    val hora: String,
-    val tecnico: String,
-    val ot: String,
-    val cliente: String,
-    val exterior: Boolean,
-    val prioridad: String
-)
-
 data class Material(
     val nombre: String,
     val cantidad: Int,

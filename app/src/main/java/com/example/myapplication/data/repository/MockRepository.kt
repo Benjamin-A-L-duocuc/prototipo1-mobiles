@@ -68,13 +68,6 @@ object MockRepository {
         )
     )
 
-    val agendaHoy = listOf(
-        AgendaItem("09:00", "Cristian Rojas", "OT-1042", "Supermercado Ñuñoa", false, "Alta"),
-        AgendaItem("11:30", "Paula Díaz", "OT-1043", "Retail Macul", true, "Media"),
-        AgendaItem("14:00", "Diego Soto", "OT-1044", "Mall Plaza Oeste", false, "Alta"),
-        AgendaItem("16:30", "Cristian Rojas", "OT-1045", "Supermercado La Reina", true, "Baja")
-    )
-
     val actividades = listOf(
         "Revisar presión del circuito de refrigerante",
         "Limpiar serpentín del condensador",
@@ -93,12 +86,6 @@ object MockRepository {
         SyncItem("Diagnóstico", "09:52 · Fuga en circuito", "diagnostico"),
         SyncItem("Actividades", "10:05 · 3 actividades", "actividades"),
         SyncItem("Evidencias", "10:20 · 2 fotografías", "evidencias")
-    )
-
-    val otPrioritarias = listOf(
-        mapOf("id" to "OT-1042", "cliente" to "Supermercado Ñuñoa", "prioridad" to "Alta", "estado" to "Asignada", "sla" to "1h 20m"),
-        mapOf("id" to "OT-1044", "cliente" to "Mall Plaza Oeste", "prioridad" to "Alta", "estado" to "En ejecución", "sla" to "0h 45m"),
-        mapOf("id" to "OT-1043", "cliente" to "Retail Macul", "prioridad" to "Media", "estado" to "Asignada", "sla" to "4h 10m")
     )
 
     val cliente = ClienteInfo(

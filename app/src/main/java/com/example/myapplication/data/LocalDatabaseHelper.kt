@@ -2,10 +2,12 @@ package com.example.myapplication.data
 
 import android.content.ContentValues
 import android.content.Context
+import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import com.example.myapplication.data.repository.MockRepository
-import com.example.myapplication.model.*
+import com.example.myapplication.model.OT
+import com.example.myapplication.model.SyncItem
 
 class LocalDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
@@ -193,58 +195,37 @@ class LocalDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
 
     fun getAllOts(): List<OT> {
         val list = mutableListOf<OT>()
-        val db = readableDatabase
-        val cursor = db.rawQuery("SELECT * FROM $TABLE_OT", null)
+        val cursor = readableDatabase.rawQuery("SELECT * FROM $TABLE_OT", null)
         cursor.use {
-            if (it.moveToFirst()) {
-                do {
-                    list.add(
-                        OT(
-                            id = it.getString(it.getColumnIndexOrThrow("id")),
-                            cliente = it.getString(it.getColumnIndexOrThrow("cliente")),
-                            local = it.getString(it.getColumnIndexOrThrow("local")),
-                            direccion = it.getString(it.getColumnIndexOrThrow("direccion")),
-                            equipo = it.getString(it.getColumnIndexOrThrow("equipo")),
-                            equipoId = it.getString(it.getColumnIndexOrThrow("equipoId")),
-                            tipo = it.getString(it.getColumnIndexOrThrow("tipo")),
-                            prioridad = it.getString(it.getColumnIndexOrThrow("prioridad")),
-                            estado = it.getString(it.getColumnIndexOrThrow("estado")),
-                            sla = it.getString(it.getColumnIndexOrThrow("sla")),
-                            distancia = it.getString(it.getColumnIndexOrThrow("distancia")),
-                            descripcion = it.getString(it.getColumnIndexOrThrow("descripcion")),
-                            exterior = it.getInt(it.getColumnIndexOrThrow("exterior")) == 1
-                        )
-                    )
-                } while (it.moveToNext())
+            while (it.moveToNext()) {
+                list.add(it.toOt())
             }
         }
         return list
     }
 
     fun getOtById(id: String): OT? {
-        val db = readableDatabase
-        val cursor = db.rawQuery("SELECT * FROM $TABLE_OT WHERE id = ?", arrayOf(id))
+        val cursor = readableDatabase.rawQuery("SELECT * FROM $TABLE_OT WHERE id = ?", arrayOf(id))
         cursor.use {
-            if (it.moveToFirst()) {
-                return OT(
-                    id = it.getString(it.getColumnIndexOrThrow("id")),
-                    cliente = it.getString(it.getColumnIndexOrThrow("cliente")),
-                    local = it.getString(it.getColumnIndexOrThrow("local")),
-                    direccion = it.getString(it.getColumnIndexOrThrow("direccion")),
-                    equipo = it.getString(it.getColumnIndexOrThrow("equipo")),
-                    equipoId = it.getString(it.getColumnIndexOrThrow("equipoId")),
-                    tipo = it.getString(it.getColumnIndexOrThrow("tipo")),
-                    prioridad = it.getString(it.getColumnIndexOrThrow("prioridad")),
-                    estado = it.getString(it.getColumnIndexOrThrow("estado")),
-                    sla = it.getString(it.getColumnIndexOrThrow("sla")),
-                    distancia = it.getString(it.getColumnIndexOrThrow("distancia")),
-                    descripcion = it.getString(it.getColumnIndexOrThrow("descripcion")),
-                    exterior = it.getInt(it.getColumnIndexOrThrow("exterior")) == 1
-                )
-            }
+            return if (it.moveToFirst()) it.toOt() else null
         }
-        return null
     }
+
+    private fun Cursor.toOt(): OT = OT(
+        id = getString(getColumnIndexOrThrow("id")),
+        cliente = getString(getColumnIndexOrThrow("cliente")),
+        local = getString(getColumnIndexOrThrow("local")),
+        direccion = getString(getColumnIndexOrThrow("direccion")),
+        equipo = getString(getColumnIndexOrThrow("equipo")),
+        equipoId = getString(getColumnIndexOrThrow("equipoId")),
+        tipo = getString(getColumnIndexOrThrow("tipo")),
+        prioridad = getString(getColumnIndexOrThrow("prioridad")),
+        estado = getString(getColumnIndexOrThrow("estado")),
+        sla = getString(getColumnIndexOrThrow("sla")),
+        distancia = getString(getColumnIndexOrThrow("distancia")),
+        descripcion = getString(getColumnIndexOrThrow("descripcion")),
+        exterior = getInt(getColumnIndexOrThrow("exterior")) == 1
+    )
 
     fun insertOt(ot: OT) {
         val db = writableDatabase
