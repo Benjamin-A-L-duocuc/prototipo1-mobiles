@@ -131,7 +131,7 @@ These areas must not be treated as complete:
 - Technician assignment is not modeled in the OT table.
 - No audit trail or status timestamps.
 - No real digital signature image.
-- No automated tests beyond a trivial unit test.
+- Automated tests only validate mock seed data invariants. There are no database, ViewModel or UI tests.
 
 ## 8. Current File Structure
 
@@ -206,6 +206,6 @@ app/src/main/java/com/example/myapplication/
 
 - Last verified command: `.\gradlew.bat assembleDebug testDebugUnitTest`.
 - Build result: successful.
-- Test result: one trivial unit test passed.
+- Test result: five unit tests passed (mock seed data invariants).
 - Git remote: `https://github.com/Benjamin-A-L-duocuc/prototipo1-mobiles`.
 - Branch: `main`.
