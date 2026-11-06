@@ -25,10 +25,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         val found = cursor.moveToFirst()
         cursor.close()
 
-        // Also allow default seeded usernames if db query misses
-        val validUser = found || username.isNotBlank()
-
-        if (validUser) {
+        if (found) {
             _currentRole.value = role
             _isLoggedIn.value = true
             _loginError.value = null

@@ -5,19 +5,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.myapplication.data.repository.MockRepository
 import com.example.myapplication.data.repository.OtRepository
 import com.example.myapplication.model.OT
 import com.example.myapplication.model.SyncItem
 import com.example.myapplication.navigation.Rutas
+import com.example.myapplication.util.NetworkMonitor
+import kotlinx.coroutines.launch
 
 class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = OtRepository(application)
+    private val networkMonitor = NetworkMonitor(application)
 
-    var currentRoute by mutableStateOf(Rutas.LOGIN)
-        private set
-
-    var currentRole by mutableStateOf("tecnico") // tecnico, jefe, cliente
+    var currentRole by mutableStateOf("tecnico")
         private set
 
     var currentUserUsername by mutableStateOf("cristian.rojas")
@@ -26,13 +27,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     var currentUserName by mutableStateOf("Cristian Rojas")
         private set
 
-    var scenario by mutableStateOf("normal") // normal, lluvia
+    var scenario by mutableStateOf("normal")
         private set
 
-    var connection by mutableStateOf("online") // online, offline
-        private set
-
-    var pending by mutableStateOf(2)
+    var connection by mutableStateOf(if (networkMonitor.isOnline.value) "online" else "offline")
         private set
 
     var otAccepted by mutableStateOf(false)
@@ -46,6 +44,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     var syncItems by mutableStateOf(repository.getSyncItems())
         private set
+
+    val pending: Int
+        get() = syncItems.size
 
     var selectedOtId by mutableStateOf(MockRepository.defaultOT.id)
         private set
@@ -63,41 +64,52 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     val atRiskSlaCount: Int
         get() = otList.count { it.prioridad == "Alta" && it.estado != "Cerrada" && it.estado != "Conformada" }
 
+    init {
+        viewModelScope.launch {
+            networkMonitor.isOnline.collect { isOnline ->
+                connection = if (isOnline) "online" else "offline"
+            }
+        }
+    }
+
+    override fun onCleared() {
+        networkMonitor.unregister()
+        super.onCleared()
+    }
+
     fun selectOt(id: String) {
         selectedOtId = id
     }
 
-    fun navigateTo(route: String) {
-        currentRoute = route
-    }
-
-    fun setRole(role: String) {
-        currentRole = role
-    }
-
-    fun login(role: String, username: String = "") {
+    fun login(role: String, username: String = ""): String {
         currentRole = role
         if (username.isNotBlank()) {
             currentUserUsername = username
-            currentUserName = when (role) {
-                "tecnico" -> "Cristian Rojas"
-                "jefe" -> "Gerardo Jefatura"
-                else -> "María Soto"
+            currentUserName = when (username) {
+                "gerardo.jefe" -> "Gerardo Jefatura"
+                "maria.cliente" -> "María Soto"
+                else -> "Cristian Rojas"
             }
         }
-        when (role) {
-            "tecnico" -> currentRoute = Rutas.JORNADA
-            "jefe" -> currentRoute = Rutas.DASHBOARD
-            "cliente" -> currentRoute = Rutas.CLIENTE
+        return when (role) {
+            "tecnico" -> Rutas.JORNADA
+            "jefe" -> Rutas.DASHBOARD
+            "cliente" -> Rutas.CLIENTE
+            else -> Rutas.LOGIN
         }
+    }
+
+    fun logout() {
+        currentRole = "tecnico"
+        currentUserUsername = "cristian.rojas"
+        currentUserName = "Cristian Rojas"
+        otAccepted = false
+        checkinDone = false
+        selectedOtId = repository.getOts().firstOrNull()?.id ?: MockRepository.defaultOT.id
     }
 
     fun changeScenario(newScenario: String) {
         scenario = newScenario
-    }
-
-    fun changeConnection(newConnection: String) {
-        connection = newConnection
     }
 
     fun acceptOt() {
@@ -112,19 +124,16 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         repository.addSyncItem("Check-in", "Check-in registrado para $selectedOtId", "checkin")
         syncItems = repository.getSyncItems()
         otList = repository.getOts()
-        if (pending < 5) pending++
     }
 
     fun syncAll() {
         repository.clearSyncQueue()
         syncItems = emptyList()
-        pending = 0
     }
 
     fun addNewOt(ot: OT) {
         repository.addOt(ot)
         otList = repository.getOts()
-        pending++
     }
 
     fun updateOt(ot: OT) {

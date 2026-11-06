@@ -23,7 +23,11 @@ import com.example.myapplication.viewmodel.AppViewModel
 import com.example.myapplication.viewmodel.AuthViewModel
 
 @Composable
-fun LoginScreen(viewModel: AppViewModel, authViewModel: AuthViewModel = viewModel()) {
+fun LoginScreen(
+    viewModel: AppViewModel,
+    onNavigate: (String) -> Unit,
+    authViewModel: AuthViewModel = viewModel()
+) {
     var selectedRole by remember { mutableStateOf("tecnico") }
     var username by remember { mutableStateOf("cristian.rojas") }
     var password by remember { mutableStateOf("password123") }
@@ -148,7 +152,7 @@ fun LoginScreen(viewModel: AppViewModel, authViewModel: AuthViewModel = viewMode
                     onClick = {
                         val success = authViewModel.login(username, selectedRole)
                         if (success) {
-                            viewModel.login(selectedRole)
+                            onNavigate(viewModel.login(selectedRole, username))
                         }
                     },
                     modifier = Modifier.fillMaxWidth().height(48.dp),

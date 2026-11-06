@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -30,7 +31,7 @@ import com.example.myapplication.ui.components.StatusBadge
 import com.example.myapplication.viewmodel.AppViewModel
 
 @Composable
-fun TecnicoJornadaScreen(viewModel: AppViewModel) {
+fun TecnicoJornadaScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
     var viewMode by remember { mutableStateOf("lista") }
     val tecnico = MockRepository.tecnico
     val ots = viewModel.otList
@@ -39,10 +40,13 @@ fun TecnicoJornadaScreen(viewModel: AppViewModel) {
         title = "Mi jornada",
         subtitle = "Jueves 27 de octubre",
         actions = {
-            IconButton(onClick = { viewModel.navigateTo(Rutas.LOGIN) }) {
-                Icon(Icons.Filled.ExitToApp, contentDescription = "Cerrar sesión", tint = Color.White)
+            IconButton(onClick = {
+                viewModel.logout()
+                onNavigate(Rutas.LOGIN)
+            }) {
+                Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Cerrar sesión", tint = Color.White)
             }
-            IconButton(onClick = { viewModel.navigateTo(Rutas.SYNC) }) {
+            IconButton(onClick = { onNavigate(Rutas.SYNC) }) {
                 Box {
                     Icon(Icons.Filled.Refresh, contentDescription = "Sync", tint = Color.White)
                     if (viewModel.pending > 0) {
@@ -157,7 +161,7 @@ fun TecnicoJornadaScreen(viewModel: AppViewModel) {
                         .clickable {
                             ots.firstOrNull()?.let { recentOt ->
                                 viewModel.selectOt(recentOt.id)
-                                viewModel.navigateTo(Rutas.DETALLE)
+                                onNavigate(Rutas.DETALLE)
                             }
                         },
                     contentAlignment = Alignment.Center
@@ -183,7 +187,7 @@ fun TecnicoJornadaScreen(viewModel: AppViewModel) {
                             .border(1.dp, Color(0xFF334155), RoundedCornerShape(16.dp))
                             .clickable {
                                 viewModel.selectOt(ot.id)
-                                viewModel.navigateTo(Rutas.DETALLE)
+                                onNavigate(Rutas.DETALLE)
                             }
                             .padding(14.dp)
                     ) {
@@ -227,7 +231,7 @@ fun TecnicoJornadaScreen(viewModel: AppViewModel) {
                     .clip(RoundedCornerShape(16.dp))
                     .background(Color(0xFF1E293B))
                     .border(1.dp, Color(0xFF334155), RoundedCornerShape(16.dp))
-                    .clickable { viewModel.navigateTo(Rutas.SYNC) }
+                    .clickable { onNavigate(Rutas.SYNC) }
                     .padding(14.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {

@@ -25,13 +25,13 @@ import com.example.myapplication.ui.components.PhoneScreen
 import com.example.myapplication.viewmodel.AppViewModel
 
 @Composable
-fun TecnicoCheckInScreen(viewModel: AppViewModel) {
+fun TecnicoCheckInScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
     val ot = viewModel.selectedOT
 
     PhoneScreen(
         title = "Check-in",
         subtitle = "${ot.id} · ${ot.cliente}",
-        onBack = { viewModel.navigateTo(Rutas.DETALLE) }
+        onBack = { onNavigate(Rutas.DETALLE) }
     ) {
         Column(
             modifier = Modifier
@@ -140,7 +140,7 @@ fun TecnicoCheckInScreen(viewModel: AppViewModel) {
                     }
                 } else {
                     Button(
-                        onClick = { viewModel.navigateTo(Rutas.EJECUCION) },
+                        onClick = { onNavigate(Rutas.EJECUCION) },
                         modifier = Modifier.fillMaxWidth().height(48.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
                         shape = RoundedCornerShape(12.dp)
@@ -152,7 +152,7 @@ fun TecnicoCheckInScreen(viewModel: AppViewModel) {
                 }
 
                 OutlinedButton(
-                    onClick = { viewModel.navigateTo(Rutas.DETALLE) },
+                    onClick = { onNavigate(Rutas.DETALLE) },
                     modifier = Modifier.fillMaxWidth().height(44.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)

@@ -27,7 +27,7 @@ import com.example.myapplication.ui.components.PhoneScreen
 import com.example.myapplication.viewmodel.AppViewModel
 
 @Composable
-fun TecnicoEjecucionScreen(viewModel: AppViewModel) {
+fun TecnicoEjecucionScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
     var step by remember { mutableStateOf("diagnostico") }
     var diagnosticoText by remember {
         mutableStateOf("Se detecta baja presión en el circuito de refrigerante y acumulación de polvo en el condensador. Se recomienda recarga y limpieza.")
@@ -47,7 +47,7 @@ fun TecnicoEjecucionScreen(viewModel: AppViewModel) {
     PhoneScreen(
         title = "Ejecución",
         subtitle = "${ot.id} · En ejecución",
-        onBack = { viewModel.navigateTo(Rutas.DETALLE) }
+        onBack = { onNavigate(Rutas.DETALLE) }
     ) {
         Column(
             modifier = Modifier
@@ -80,7 +80,7 @@ fun TecnicoEjecucionScreen(viewModel: AppViewModel) {
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier.clickable {
                                 if (sVal == "evidencias") {
-                                    viewModel.navigateTo(Rutas.EVIDENCIAS)
+                                    onNavigate(Rutas.EVIDENCIAS)
                                 } else {
                                     step = sVal
                                 }
@@ -220,7 +220,7 @@ fun TecnicoEjecucionScreen(viewModel: AppViewModel) {
                 onClick = {
                     if (step == "diagnostico") step = "actividades"
                     else if (step == "actividades") step = "materiales"
-                    else viewModel.navigateTo(Rutas.EVIDENCIAS)
+                    else onNavigate(Rutas.EVIDENCIAS)
                 },
                 modifier = Modifier.fillMaxWidth().height(48.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0EA5E9)),

@@ -27,7 +27,7 @@ import com.example.myapplication.ui.components.StatusBadge
 import com.example.myapplication.viewmodel.AppViewModel
 
 @Composable
-fun TecnicoDetalleOTScreen(viewModel: AppViewModel) {
+fun TecnicoDetalleOTScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
     val ot = viewModel.selectedOT
     val tecnico = MockRepository.tecnico
     val estado = if (viewModel.checkinDone) "En ejecución" else if (viewModel.otAccepted) "Aceptada" else ot.estado
@@ -35,7 +35,7 @@ fun TecnicoDetalleOTScreen(viewModel: AppViewModel) {
     PhoneScreen(
         title = ot.id,
         subtitle = "Detalle de la orden de trabajo",
-        onBack = { viewModel.navigateTo(Rutas.JORNADA) }
+        onBack = { onNavigate(Rutas.JORNADA) }
     ) {
         Column(
             modifier = Modifier
@@ -191,7 +191,7 @@ fun TecnicoDetalleOTScreen(viewModel: AppViewModel) {
                     }
                 } else if (!viewModel.checkinDone) {
                     Button(
-                        onClick = { viewModel.navigateTo(Rutas.CHECKIN) },
+                        onClick = { onNavigate(Rutas.CHECKIN) },
                         modifier = Modifier.fillMaxWidth().height(48.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0EA5E9)),
                         shape = RoundedCornerShape(12.dp)
@@ -202,7 +202,7 @@ fun TecnicoDetalleOTScreen(viewModel: AppViewModel) {
                     }
                 } else {
                     Button(
-                        onClick = { viewModel.navigateTo(Rutas.EJECUCION) },
+                        onClick = { onNavigate(Rutas.EJECUCION) },
                         modifier = Modifier.fillMaxWidth().height(48.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
                         shape = RoundedCornerShape(12.dp)
@@ -214,7 +214,7 @@ fun TecnicoDetalleOTScreen(viewModel: AppViewModel) {
                 }
 
                 OutlinedButton(
-                    onClick = { viewModel.navigateTo(Rutas.JORNADA) },
+                    onClick = { onNavigate(Rutas.JORNADA) },
                     modifier = Modifier.fillMaxWidth().height(44.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)

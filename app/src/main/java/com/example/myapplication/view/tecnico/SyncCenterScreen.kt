@@ -25,7 +25,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
-fun SyncCenterScreen(viewModel: AppViewModel) {
+fun SyncCenterScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
     val online = viewModel.connection == "online"
     var syncing by remember { mutableStateOf(false) }
     var synced by remember { mutableStateOf(false) }
@@ -35,7 +35,7 @@ fun SyncCenterScreen(viewModel: AppViewModel) {
     PhoneScreen(
         title = "Sincronización",
         subtitle = "Cola de registros de la OT",
-        onBack = { viewModel.navigateTo(Rutas.JORNADA) }
+        onBack = { onNavigate(Rutas.JORNADA) }
     ) {
         Column(
             modifier = Modifier
@@ -197,7 +197,7 @@ fun SyncCenterScreen(viewModel: AppViewModel) {
             }
 
             OutlinedButton(
-                onClick = { viewModel.navigateTo(Rutas.JORNADA) },
+                onClick = { onNavigate(Rutas.JORNADA) },
                 modifier = Modifier.fillMaxWidth().height(44.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)

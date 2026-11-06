@@ -24,7 +24,7 @@ import com.example.myapplication.ui.components.PriorityBadge
 import com.example.myapplication.viewmodel.AppViewModel
 
 @Composable
-fun JefeAgendaScreen(viewModel: AppViewModel) {
+fun JefeAgendaScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
     var dia by remember { mutableStateOf("lun") }
     var reprogramadas by remember { mutableStateOf(false) }
     val lluvia = viewModel.scenario == "lluvia"
@@ -33,7 +33,7 @@ fun JefeAgendaScreen(viewModel: AppViewModel) {
     PhoneScreen(
         title = "Agenda",
         subtitle = "Semana 27–31 de octubre",
-        onBack = { viewModel.navigateTo(Rutas.DASHBOARD) }
+        onBack = { onNavigate(Rutas.DASHBOARD) }
     ) {
         Column(
             modifier = Modifier
@@ -152,7 +152,7 @@ fun JefeAgendaScreen(viewModel: AppViewModel) {
             }
 
             Button(
-                onClick = { viewModel.navigateTo(Rutas.DASHBOARD) },
+                onClick = { onNavigate(Rutas.DASHBOARD) },
                 modifier = Modifier.fillMaxWidth().height(44.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF334155))

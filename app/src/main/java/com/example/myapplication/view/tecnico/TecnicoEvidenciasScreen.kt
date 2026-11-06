@@ -23,7 +23,7 @@ import com.example.myapplication.ui.components.PhoneScreen
 import com.example.myapplication.viewmodel.AppViewModel
 
 @Composable
-fun TecnicoEvidenciasScreen(viewModel: AppViewModel) {
+fun TecnicoEvidenciasScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
     var photos by remember { mutableStateOf(listOf("Evidencia #1 (Condensador)", "Evidencia #2 (Panel eléctrico)")) }
     var comentario by remember { mutableStateOf("Se adjuntan fotos del condensador antes y después de la limpieza.") }
     val ot = viewModel.selectedOT
@@ -31,7 +31,7 @@ fun TecnicoEvidenciasScreen(viewModel: AppViewModel) {
     PhoneScreen(
         title = "Evidencias",
         subtitle = "${ot.id} · Fotos de la intervención",
-        onBack = { viewModel.navigateTo(Rutas.EJECUCION) }
+        onBack = { onNavigate(Rutas.EJECUCION) }
     ) {
         Column(
             modifier = Modifier
@@ -140,7 +140,7 @@ fun TecnicoEvidenciasScreen(viewModel: AppViewModel) {
             }
 
             Button(
-                onClick = { viewModel.navigateTo(Rutas.CIERRE) },
+                onClick = { onNavigate(Rutas.CIERRE) },
                 modifier = Modifier.fillMaxWidth().height(48.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
                 shape = RoundedCornerShape(12.dp)

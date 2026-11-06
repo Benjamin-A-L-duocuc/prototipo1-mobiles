@@ -29,7 +29,7 @@ import com.example.myapplication.ui.components.StatusBadge
 import com.example.myapplication.viewmodel.AppViewModel
 
 @Composable
-fun JefeDashboardScreen(viewModel: AppViewModel) {
+fun JefeDashboardScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
     var editingOt by remember { mutableStateOf<OT?>(null) }
     var deletingOtId by remember { mutableStateOf<String?>(null) }
 
@@ -184,7 +184,7 @@ fun JefeDashboardScreen(viewModel: AppViewModel) {
                             Text(text = "Lluvia y viento fuerte previstos. 3 visitas en azotea podrían reprogramarse.", color = Color(0xFF92400E), fontSize = 10.sp)
                             Spacer(modifier = Modifier.height(8.dp))
                             Button(
-                                onClick = { viewModel.navigateTo(Rutas.AGENDA) },
+                                onClick = { onNavigate(Rutas.AGENDA) },
                                 modifier = Modifier.height(32.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD97706)),
                                 shape = RoundedCornerShape(8.dp),
@@ -202,7 +202,7 @@ fun JefeDashboardScreen(viewModel: AppViewModel) {
             // Quick action buttons
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
-                    onClick = { viewModel.navigateTo(Rutas.CREAR_OT) },
+                    onClick = { onNavigate(Rutas.CREAR_OT) },
                     modifier = Modifier.weight(1f).height(42.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0EA5E9)),
                     shape = RoundedCornerShape(10.dp)
@@ -212,7 +212,7 @@ fun JefeDashboardScreen(viewModel: AppViewModel) {
                     Text("Crear OT", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
                 OutlinedButton(
-                    onClick = { viewModel.navigateTo(Rutas.AGENDA) },
+                    onClick = { onNavigate(Rutas.AGENDA) },
                     modifier = Modifier.weight(1f).height(42.dp),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)

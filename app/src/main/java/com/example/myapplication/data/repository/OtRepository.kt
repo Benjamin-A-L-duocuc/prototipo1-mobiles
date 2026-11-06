@@ -8,14 +8,9 @@ import com.example.myapplication.model.SyncItem
 class OtRepository(context: Context) {
     private val dbHelper = LocalDatabaseHelper(context)
 
-    fun getOts(): List<OT> {
-        val list = dbHelper.getAllOts()
-        return if (list.isEmpty()) MockRepository.otList else list
-    }
+    fun getOts(): List<OT> = dbHelper.getAllOts()
 
-    fun getOtById(id: String): OT? {
-        return dbHelper.getOtById(id) ?: getOts().find { it.id == id }
-    }
+    fun getOtById(id: String): OT? = dbHelper.getOtById(id)
 
     fun addOt(ot: OT) {
         dbHelper.insertOt(ot)
@@ -37,10 +32,7 @@ class OtRepository(context: Context) {
         dbHelper.addSyncItem(tipo, detalle, icono)
     }
 
-    fun getSyncItems(): List<SyncItem> {
-        val items = dbHelper.getSyncItems()
-        return if (items.isEmpty()) MockRepository.syncItems else items
-    }
+    fun getSyncItems(): List<SyncItem> = dbHelper.getSyncItems()
 
     fun clearSyncQueue() {
         dbHelper.clearSyncItems()

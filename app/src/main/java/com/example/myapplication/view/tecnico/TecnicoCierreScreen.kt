@@ -24,7 +24,7 @@ import com.example.myapplication.ui.components.PhoneScreen
 import com.example.myapplication.viewmodel.AppViewModel
 
 @Composable
-fun TecnicoCierreScreen(viewModel: AppViewModel) {
+fun TecnicoCierreScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
     var signed by remember { mutableStateOf(false) }
     var conforme by remember { mutableStateOf(true) }
     val cliente = MockRepository.cliente
@@ -33,7 +33,7 @@ fun TecnicoCierreScreen(viewModel: AppViewModel) {
     PhoneScreen(
         title = "Cierre de OT",
         subtitle = "${ot.id} · ${ot.cliente}",
-        onBack = { viewModel.navigateTo(Rutas.EVIDENCIAS) }
+        onBack = { onNavigate(Rutas.EVIDENCIAS) }
     ) {
         Column(
             modifier = Modifier
@@ -137,7 +137,7 @@ fun TecnicoCierreScreen(viewModel: AppViewModel) {
                     Spacer(modifier = Modifier.height(12.dp))
 
                     Button(
-                        onClick = { viewModel.navigateTo(Rutas.SYNC) },
+                        onClick = { onNavigate(Rutas.SYNC) },
                         modifier = Modifier.fillMaxWidth().height(48.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0EA5E9)),
                         shape = RoundedCornerShape(12.dp)

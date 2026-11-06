@@ -26,7 +26,7 @@ import com.example.myapplication.ui.components.PhoneScreen
 import com.example.myapplication.viewmodel.AppViewModel
 
 @Composable
-fun JefeCrearOTScreen(viewModel: AppViewModel) {
+fun JefeCrearOTScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
     var creada by remember { mutableStateOf(false) }
     var tipo by remember { mutableStateOf("preventivo") }
     var prioridad by remember { mutableStateOf("media") }
@@ -42,7 +42,7 @@ fun JefeCrearOTScreen(viewModel: AppViewModel) {
         PhoneScreen(
             title = "Crear OT",
             subtitle = "Nueva orden de trabajo",
-            onBack = { viewModel.navigateTo(Rutas.DASHBOARD) }
+            onBack = { onNavigate(Rutas.DASHBOARD) }
         ) {
             Column(
                 modifier = Modifier
@@ -110,7 +110,7 @@ fun JefeCrearOTScreen(viewModel: AppViewModel) {
                 Spacer(modifier = Modifier.height(20.dp))
 
                 Button(
-                    onClick = { viewModel.navigateTo(Rutas.DASHBOARD) },
+                    onClick = { onNavigate(Rutas.DASHBOARD) },
                     modifier = Modifier.fillMaxWidth().height(48.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0EA5E9)),
                     shape = RoundedCornerShape(12.dp)
@@ -125,7 +125,7 @@ fun JefeCrearOTScreen(viewModel: AppViewModel) {
     PhoneScreen(
         title = "Crear OT",
         subtitle = "Nueva orden de trabajo",
-        onBack = { viewModel.navigateTo(Rutas.DASHBOARD) }
+        onBack = { onNavigate(Rutas.DASHBOARD) }
     ) {
         Column(
             modifier = Modifier
