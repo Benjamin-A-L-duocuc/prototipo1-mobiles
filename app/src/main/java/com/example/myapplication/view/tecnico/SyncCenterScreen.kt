@@ -166,7 +166,7 @@ fun SyncCenterScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
                         .border(1.dp, Color(0xFF059669), RoundedCornerShape(12.dp))
                         .padding(12.dp)
                 ) {
-                    Text(text = "Todo sincronizado. La OT ya está actualizada en el servidor.", color = Color(0xFF6EE7B7), fontSize = 11.sp)
+                    Text(text = "No hay registros pendientes en este dispositivo.", color = Color(0xFF6EE7B7), fontSize = 11.sp)
                 }
             }
 
@@ -182,7 +182,7 @@ fun SyncCenterScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
                         }
                     }
                 },
-                enabled = !syncing && viewModel.pending > 0,
+                enabled = !syncing && viewModel.pending > 0 && online,
                 modifier = Modifier.fillMaxWidth().height(48.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0EA5E9)),
                 shape = RoundedCornerShape(12.dp)
@@ -190,7 +190,12 @@ fun SyncCenterScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
                 Icon(Icons.Filled.Refresh, contentDescription = null, tint = Color.White)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = if (syncing) "Sincronizando..." else if (viewModel.pending == 0) "Todo sincronizado" else "Sincronizar ahora / Reintentar",
+                    text = when {
+                        syncing -> "Sincronizando..."
+                        viewModel.pending == 0 -> "Todo sincronizado"
+                        !online -> "Sin conexión para sincronizar"
+                        else -> "Sincronizar ahora"
+                    },
                     color = Color.White,
                     fontWeight = FontWeight.Bold
                 )

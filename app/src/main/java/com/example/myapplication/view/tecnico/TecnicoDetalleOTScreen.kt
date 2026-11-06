@@ -179,7 +179,7 @@ fun TecnicoDetalleOTScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit
 
             // Action buttons
             Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 16.dp)) {
-                if (ot.estado == "Asignada") {
+                if (ot.estado in setOf("Asignada", "Pendiente")) {
                     Button(
                         onClick = { viewModel.acceptOt() },
                         modifier = Modifier.fillMaxWidth().height(48.dp),

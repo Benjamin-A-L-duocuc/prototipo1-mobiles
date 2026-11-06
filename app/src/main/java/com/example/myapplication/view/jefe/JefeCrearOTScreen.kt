@@ -276,8 +276,8 @@ fun JefeCrearOTScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
 
             Button(
                 onClick = {
-                    val nextIdNum = 1042 + viewModel.otList.size + 1
-                    createdOtId = "OT-$nextIdNum"
+                    createdOtId = viewModel.nextOtId()
+                    val nextIdNum = createdOtId.removePrefix("OT-").toIntOrNull() ?: 1046
                     val newOt = OT(
                         id = createdOtId,
                         cliente = clienteInput.ifBlank { "Cliente General" },

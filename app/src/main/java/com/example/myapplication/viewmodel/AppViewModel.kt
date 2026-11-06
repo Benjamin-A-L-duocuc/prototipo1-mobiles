@@ -121,6 +121,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         syncItems = emptyList()
     }
 
+    fun nextOtId(): String {
+        val lastNumber = otList.mapNotNull { it.id.removePrefix("OT-").toIntOrNull() }.maxOrNull() ?: 1041
+        return "OT-${lastNumber + 1}"
+    }
+
     fun addNewOt(ot: OT) {
         repository.addOt(ot)
         otList = repository.getOts()
