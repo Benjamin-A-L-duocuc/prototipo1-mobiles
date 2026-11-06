@@ -18,7 +18,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.myapplication.data.repository.MockRepository
 import com.example.myapplication.navigation.Rutas
 import com.example.myapplication.ui.components.OfflineBanner
 import com.example.myapplication.ui.components.PhoneScreen
@@ -27,6 +26,7 @@ import com.example.myapplication.viewmodel.AppViewModel
 @Composable
 fun TecnicoCheckInScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
     val ot = viewModel.selectedOT
+    val checkedIn = ot.estado in setOf("En ejecución", "Cerrada", "Conformada")
 
     PhoneScreen(
         title = "Check-in",
@@ -113,7 +113,7 @@ fun TecnicoCheckInScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) 
 
             OfflineBanner(isOffline = viewModel.connection == "offline")
 
-            if (viewModel.checkinDone) {
+            if (checkedIn) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -127,7 +127,7 @@ fun TecnicoCheckInScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) 
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 16.dp)) {
-                if (!viewModel.checkinDone) {
+                if (!checkedIn) {
                     Button(
                         onClick = { viewModel.doCheckIn() },
                         modifier = Modifier.fillMaxWidth().height(48.dp),

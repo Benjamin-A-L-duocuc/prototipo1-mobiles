@@ -30,7 +30,8 @@ import com.example.myapplication.viewmodel.AppViewModel
 fun TecnicoDetalleOTScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
     val ot = viewModel.selectedOT
     val tecnico = MockRepository.tecnico
-    val estado = if (viewModel.checkinDone) "En ejecución" else if (viewModel.otAccepted) "Aceptada" else ot.estado
+    val accepted = ot.estado in setOf("Aceptada", "En ejecución", "Cerrada", "Conformada")
+    val checkedIn = ot.estado in setOf("En ejecución", "Cerrada", "Conformada")
 
     PhoneScreen(
         title = ot.id,
@@ -56,7 +57,7 @@ fun TecnicoDetalleOTScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                         PriorityBadge(priority = ot.prioridad)
-                        StatusBadge(status = estado)
+                        StatusBadge(status = ot.estado)
                     }
                     Text(text = ot.tipo, color = Color(0xFF94A3B8), fontSize = 10.sp, fontWeight = FontWeight.Bold)
                 }
@@ -115,8 +116,8 @@ fun TecnicoDetalleOTScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit
                 val steps = listOf(
                     Triple("Creada", true, "08:10"),
                     Triple("Asignada", true, "08:25"),
-                    Triple("Aceptada", viewModel.otAccepted, if (viewModel.otAccepted) "08:40" else "—"),
-                    Triple("Check-in", viewModel.checkinDone, if (viewModel.checkinDone) "09:41" else "—")
+                    Triple("Aceptada", accepted, if (accepted) "08:40" else "—"),
+                    Triple("Check-in", checkedIn, if (checkedIn) "09:41" else "—")
                 )
 
                 steps.forEachIndexed { index, (label, done, time) ->
@@ -152,7 +153,7 @@ fun TecnicoDetalleOTScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit
 
             OfflineBanner(isOffline = viewModel.connection == "offline")
 
-            if (viewModel.otAccepted && !viewModel.checkinDone) {
+            if (ot.estado == "Aceptada") {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -163,7 +164,7 @@ fun TecnicoDetalleOTScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit
                 ) {
                     Text(text = "OT aceptada. El siguiente paso es registrar el check-in.", color = Color(0xFF6EE7B7), fontSize = 11.sp)
                 }
-            } else if (viewModel.checkinDone) {
+            } else if (ot.estado == "En ejecución") {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -178,7 +179,7 @@ fun TecnicoDetalleOTScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit
 
             // Action buttons
             Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 16.dp)) {
-                if (!viewModel.otAccepted) {
+                if (ot.estado == "Asignada") {
                     Button(
                         onClick = { viewModel.acceptOt() },
                         modifier = Modifier.fillMaxWidth().height(48.dp),
@@ -189,7 +190,7 @@ fun TecnicoDetalleOTScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Aceptar OT", color = Color.White, fontWeight = FontWeight.Bold)
                     }
-                } else if (!viewModel.checkinDone) {
+                } else if (ot.estado == "Aceptada") {
                     Button(
                         onClick = { onNavigate(Rutas.CHECKIN) },
                         modifier = Modifier.fillMaxWidth().height(48.dp),

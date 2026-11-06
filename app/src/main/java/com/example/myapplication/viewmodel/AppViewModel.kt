@@ -33,12 +33,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     var connection by mutableStateOf(if (networkMonitor.isOnline.value) "online" else "offline")
         private set
 
-    var otAccepted by mutableStateOf(false)
-        private set
-
-    var checkinDone by mutableStateOf(false)
-        private set
-
     var otList by mutableStateOf(repository.getOts())
         private set
 
@@ -103,8 +97,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         currentRole = "tecnico"
         currentUserUsername = "cristian.rojas"
         currentUserName = "Cristian Rojas"
-        otAccepted = false
-        checkinDone = false
         selectedOtId = repository.getOts().firstOrNull()?.id ?: MockRepository.defaultOT.id
     }
 
@@ -113,13 +105,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun acceptOt() {
-        otAccepted = true
         repository.updateEstado(selectedOtId, "Aceptada")
         otList = repository.getOts()
     }
 
     fun doCheckIn() {
-        checkinDone = true
         repository.updateEstado(selectedOtId, "En ejecución")
         repository.addSyncItem("Check-in", "Check-in registrado para $selectedOtId", "checkin")
         syncItems = repository.getSyncItems()

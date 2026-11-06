@@ -175,10 +175,6 @@ fun TecnicoJornadaScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) 
                 }
             } else {
                 ots.forEach { ot ->
-                    val estado = if (ot.id == MockRepository.defaultOT.id) {
-                        if (viewModel.checkinDone) "En ejecución" else if (viewModel.otAccepted) "Aceptada" else ot.estado
-                    } else ot.estado
-
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -194,7 +190,7 @@ fun TecnicoJornadaScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) 
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                                 PriorityBadge(priority = ot.prioridad)
-                                StatusBadge(status = estado)
+                                StatusBadge(status = ot.estado)
                             }
                             Text(text = ot.id, color = Color(0xFF94A3B8), fontSize = 10.sp, fontWeight = FontWeight.Bold)
                         }
