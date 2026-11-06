@@ -38,6 +38,7 @@ import com.example.myapplication.model.Evidence
 import com.example.myapplication.navigation.Rutas
 import com.example.myapplication.ui.components.OfflineBanner
 import com.example.myapplication.ui.components.PhoneScreen
+import com.example.myapplication.validation.Validators
 import com.example.myapplication.viewmodel.AppViewModel
 import java.io.File
 import java.text.SimpleDateFormat
@@ -98,12 +99,9 @@ fun TecnicoEvidenciasScreen(viewModel: AppViewModel, onNavigate: (String) -> Uni
     }
 
     val comentarioLimpio = comentario.trim()
-    val comentarioError = when {
-        comentarioLimpio.length > 300 -> "El comentario no puede superar los 300 caracteres."
-        comentarioTocado && comentarioLimpio.length < 10 -> "Escribe al menos 10 caracteres."
-        else -> null
-    }
-    val canContinue = photos.isNotEmpty() && comentarioLimpio.length >= 10 && comentarioError == null
+    val comentarioValidationError = Validators.evidenceComment(comentario)
+    val comentarioError = if (comentarioTocado) comentarioValidationError else null
+    val canContinue = photos.isNotEmpty() && comentarioValidationError == null
 
     LaunchedEffect(statusMessage) {
         if (statusMessage != null) {
@@ -259,6 +257,12 @@ fun TecnicoEvidenciasScreen(viewModel: AppViewModel, onNavigate: (String) -> Uni
             if (photos.isEmpty()) {
                 Text(
                     text = "Agrega al menos una fotografía para habilitar el cierre.",
+                    color = Color(0xFFFCA5A5),
+                    fontSize = 10.sp
+                )
+            } else if (comentarioValidationError != null) {
+                Text(
+                    text = "Completa el comentario de evidencia para habilitar el cierre.",
                     color = Color(0xFFFCA5A5),
                     fontSize = 10.sp
                 )

@@ -31,6 +31,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.myapplication.validation.Validators
 import com.example.myapplication.viewmodel.AppViewModel
 import com.example.myapplication.viewmodel.AuthViewModel
 
@@ -47,13 +48,8 @@ fun LoginScreen(
     var passwordTouched by remember { mutableStateOf(false) }
     var passwordVisible by remember { mutableStateOf(false) }
     val loginError by authViewModel.loginError.collectAsState()
-    val usernameError = if (usernameTouched && username.trim().isEmpty()) "Ingresa tu usuario." else null
-    val passwordError = when {
-        !passwordTouched -> null
-        password.isEmpty() -> "Ingresa tu contraseña."
-        password.length < 8 -> "La contraseña debe tener al menos 8 caracteres."
-        else -> null
-    }
+    val usernameError = if (usernameTouched) Validators.loginUsername(username) else null
+    val passwordError = if (passwordTouched) Validators.loginPassword(password) else null
 
     Box(
         modifier = Modifier
@@ -227,10 +223,10 @@ fun LoginScreen(
                     onClick = {
                         usernameTouched = true
                         passwordTouched = true
-                        val normalizedUsername = username.trim().lowercase()
-                        if (normalizedUsername.isEmpty() || password.length < 8) {
+                        if (Validators.loginUsername(username) != null || Validators.loginPassword(password) != null) {
                             return@Button
                         }
+                        val normalizedUsername = username.trim().lowercase()
                         val success = authViewModel.login(normalizedUsername, password, selectedRole)
                         if (success) {
                             onNavigate(viewModel.login(selectedRole, normalizedUsername))

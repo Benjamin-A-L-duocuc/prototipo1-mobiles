@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import com.example.myapplication.model.OT
 import com.example.myapplication.navigation.Rutas
 import com.example.myapplication.ui.components.PhoneScreen
+import com.example.myapplication.validation.Validators
 import com.example.myapplication.viewmodel.AppViewModel
 
 @Composable
@@ -40,28 +41,12 @@ fun JefeCrearOTScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
     var descripcionTouched by remember { mutableStateOf(false) }
 
     val sinDisponibilidad = disponible == "no"
-    val clienteError = when {
-        !clienteTouched -> null
-        clienteInput.trim().isEmpty() -> "Ingresa el cliente o empresa."
-        clienteInput.trim().length < 3 -> "El cliente debe tener al menos 3 caracteres."
-        else -> null
-    }
-    val equipoError = when {
-        !equipoTouched -> null
-        equipoInput.trim().isEmpty() -> "Ingresa el equipo o activo."
-        equipoInput.trim().length < 3 -> "El equipo debe tener al menos 3 caracteres."
-        else -> null
-    }
-    val descripcionError = when {
-        !descripcionTouched -> null
-        descripcionInput.trim().isEmpty() -> "Describe el problema o trabajo solicitado."
-        descripcionInput.trim().length < 10 -> "La descripción debe tener al menos 10 caracteres."
-        descripcionInput.trim().length > 300 -> "La descripción no puede superar los 300 caracteres."
-        else -> null
-    }
-    val formularioValido = clienteInput.trim().length >= 3 &&
-        equipoInput.trim().length >= 3 &&
-        descripcionInput.trim().length in 10..300
+    val clienteError = if (clienteTouched) Validators.otCliente(clienteInput) else null
+    val equipoError = if (equipoTouched) Validators.otEquipo(equipoInput) else null
+    val descripcionError = if (descripcionTouched) Validators.otDescripcion(descripcionInput) else null
+    val formularioValido = Validators.otCliente(clienteInput) == null &&
+        Validators.otEquipo(equipoInput) == null &&
+        Validators.otDescripcion(descripcionInput) == null
 
     if (creada) {
         PhoneScreen(

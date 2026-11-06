@@ -3,6 +3,7 @@ package com.example.myapplication.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import com.example.myapplication.data.LocalDatabaseHelper
+import com.example.myapplication.validation.Validators
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,19 +16,15 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     fun login(username: String, password: String, role: String): Boolean {
         val normalizedUsername = username.trim().lowercase()
-        when {
-            normalizedUsername.isEmpty() -> {
-                _loginError.value = "Ingresa tu usuario."
-                return false
-            }
-            password.isEmpty() -> {
-                _loginError.value = "Ingresa tu contraseña."
-                return false
-            }
-            password.length < 8 -> {
-                _loginError.value = "La contraseña debe tener al menos 8 caracteres."
-                return false
-            }
+        val usernameError = Validators.loginUsername(username)
+        if (usernameError != null) {
+            _loginError.value = usernameError
+            return false
+        }
+        val passwordError = Validators.loginPassword(password)
+        if (passwordError != null) {
+            _loginError.value = passwordError
+            return false
         }
 
         return if (dbHelper.validateUser(normalizedUsername, role, password)) {
