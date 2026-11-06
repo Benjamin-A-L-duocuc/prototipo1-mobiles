@@ -110,6 +110,11 @@ fun TecnicoEvidenciasScreen(viewModel: AppViewModel, onNavigate: (String) -> Uni
         }
     }
 
+    LaunchedEffect(ot.id) {
+        comentario = viewModel.evidenceList.firstOrNull()?.comentario.orEmpty()
+        comentarioTocado = comentario.isNotBlank()
+    }
+
     PhoneScreen(
         title = "Evidencias",
         subtitle = "${ot.id} · Fotos de la intervención",
@@ -269,7 +274,12 @@ fun TecnicoEvidenciasScreen(viewModel: AppViewModel, onNavigate: (String) -> Uni
             }
 
             Button(
-                onClick = { onNavigate(Rutas.CIERRE) },
+                onClick = {
+                    photos.forEach { evidence ->
+                        viewModel.updateEvidenceComment(evidence, comentarioLimpio)
+                    }
+                    onNavigate(Rutas.CIERRE)
+                },
                 enabled = canContinue,
                 modifier = Modifier.fillMaxWidth().height(48.dp),
                 colors = ButtonDefaults.buttonColors(

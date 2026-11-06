@@ -3,14 +3,38 @@ package com.example.myapplication.view.jefe
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -18,147 +42,238 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.myapplication.domain.OtWorkflow
 import com.example.myapplication.navigation.Rutas
 import com.example.myapplication.ui.components.PhoneScreen
 import com.example.myapplication.ui.components.PriorityBadge
+import com.example.myapplication.ui.components.StatusBadge
+import com.example.myapplication.util.addDays
+import com.example.myapplication.util.endOfDay
+import com.example.myapplication.util.formatDate
+import com.example.myapplication.util.formatTime
+import com.example.myapplication.util.startOfDay
+import com.example.myapplication.util.startOfWeek
 import com.example.myapplication.viewmodel.AppViewModel
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
 @Composable
 fun JefeAgendaScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
-    var dia by remember { mutableStateOf("lun") }
-    var reprogramadas by remember { mutableStateOf(false) }
-    val lluvia = viewModel.scenario == "lluvia"
-    val ots = viewModel.otList
+    var weekStart by remember { mutableLongStateOf(startOfWeek(System.currentTimeMillis())) }
+    var selectedDay by remember { mutableLongStateOf(startOfDay(System.currentTimeMillis())) }
+    var tecnicoFilter by remember { mutableStateOf<Long?>(null) }
+    val days = (0..6).map { addDays(weekStart, it) }
+
+    val dayOts = viewModel.otList
+        .filter { ot ->
+            val scheduled = ot.programadaPara
+            scheduled != null && scheduled in startOfDay(selectedDay)..endOfDay(selectedDay) &&
+                (tecnicoFilter == null || ot.tecnicoId == tecnicoFilter) &&
+                ot.estado != OtWorkflow.CANCELADA
+        }
+        .sortedBy { it.programadaPara }
+
+    val hasExteriorOutdoor = dayOts.any { it.exterior }
 
     PhoneScreen(
-        title = "Agenda",
-        subtitle = "Semana 27–31 de octubre",
+        title = "Agenda semanal",
+        subtitle = "Planificación de visitas técnicas",
         onBack = { onNavigate(Rutas.DASHBOARD) }
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Days selector
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                val dias = listOf(
-                    Triple("lun", "Lun", "27"),
-                    Triple("mar", "Mar", "28"),
-                    Triple("mie", "Mié", "29"),
-                    Triple("jue", "Jue", "30"),
-                    Triple("vie", "Vie", "31")
-                )
-                dias.forEach { (d, label, num) ->
-                    val sel = dia == d
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(if (sel) Color(0xFF0EA5E9) else Color(0xFF1E293B))
-                            .border(1.dp, if (sel) Color(0xFF38BDF8) else Color(0xFF334155), RoundedCornerShape(10.dp))
-                            .clickable { dia = d }
-                            .padding(vertical = 8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(text = label, color = if (sel) Color.White else Color(0xFF94A3B8), fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                        Text(text = num, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
-                    }
-                }
-            }
-
-            if (lluvia) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color(0xFFFEF3C7))
-                        .border(1.dp, Color(0xFFFDE68A), RoundedCornerShape(16.dp))
-                        .padding(14.dp)
-                ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(Color(0xFFFDE68A)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Filled.WbCloudy, contentDescription = null, tint = Color(0xFFB45309))
-                        }
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Visitas con equipos exteriores en riesgo", color = Color(0xFF78350F), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(text = "Lluvia y viento fuerte entre 15:00 y 18:00. Reprograma o adelanta estas visitas.", color = Color(0xFF92400E), fontSize = 10.sp)
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Button(
-                                onClick = { reprogramadas = !reprogramadas },
-                                modifier = Modifier.height(32.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = if (reprogramadas) Color(0xFF10B981) else Color(0xFFD97706)),
-                                shape = RoundedCornerShape(8.dp),
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
-                            ) {
-                                Icon(Icons.Filled.Refresh, contentDescription = null, modifier = Modifier.size(12.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(if (reprogramadas) "Reprogramadas" else "Reprogramar visitas", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    }
-                }
-            }
-
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(text = "VISITAS DEL DÍA", color = Color(0xFF94A3B8), fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                Text(text = "${ots.size} programadas", color = Color(0xFF94A3B8), fontSize = 10.sp)
-            }
-
-            ots.forEachIndexed { index, ot ->
-                val hora = listOf("09:00", "11:30", "14:00", "16:30", "18:00")[index % 5]
-                val enRiesgo = lluvia && ot.exterior
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(if (enRiesgo) Color(0xFF78350F).copy(alpha = 0.3f) else Color(0xFF1E293B))
-                        .border(1.dp, if (enRiesgo) Color(0xFFD97706) else Color(0xFF334155), RoundedCornerShape(14.dp))
-                        .padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Text(text = hora, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.width(40.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = ot.cliente, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                            PriorityBadge(priority = ot.prioridad)
-                        }
-                        Text(text = "${ot.id} · Cristian Rojas", color = Color(0xFF94A3B8), fontSize = 9.sp)
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                if (ot.exterior) Icons.Filled.WbCloudy else Icons.Filled.WbSunny,
-                                contentDescription = null,
-                                tint = if (ot.exterior) Color(0xFFF59E0B) else Color(0xFF94A3B8),
-                                modifier = Modifier.size(12.dp)
-                            )
-                            Text(
-                                text = if (ot.exterior) "Equipo exterior" else "Interior",
-                                color = if (ot.exterior) Color(0xFFF59E0B) else Color(0xFF94A3B8),
-                                fontSize = 9.sp
-                            )
-                        }
-                    }
-                }
-            }
-
-            Button(
-                onClick = { onNavigate(Rutas.DASHBOARD) },
-                modifier = Modifier.fillMaxWidth().height(44.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF334155))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Volver al panel", color = Color.White)
+                IconButton(onClick = {
+                    weekStart = addDays(weekStart, -7)
+                    selectedDay = startOfDay(weekStart)
+                }) {
+                    Icon(Icons.Filled.ChevronLeft, contentDescription = "Semana anterior", tint = Color.White)
+                }
+                Text("Semana del ${formatDate(weekStart)}", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                IconButton(onClick = {
+                    weekStart = addDays(weekStart, 7)
+                    selectedDay = startOfDay(weekStart)
+                }) {
+                    Icon(Icons.Filled.ChevronRight, contentDescription = "Semana siguiente", tint = Color.White)
+                }
+            }
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                days.forEach { day ->
+                    DayCell(
+                        timestamp = day,
+                        selected = startOfDay(day) == startOfDay(selectedDay),
+                        modifier = Modifier.weight(1f),
+                        onClick = { selectedDay = startOfDay(day) }
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                FilterChip(
+                    selected = tecnicoFilter == null,
+                    onClick = { tecnicoFilter = null },
+                    label = { Text("Todos", fontSize = 9.sp) }
+                )
+                viewModel.technicians.filter { it.activo }.forEach { tecnico ->
+                    FilterChip(
+                        selected = tecnicoFilter == tecnico.id,
+                        onClick = { tecnicoFilter = tecnico.id },
+                        label = { Text(tecnico.nombre.substringBefore(" "), fontSize = 9.sp) }
+                    )
+                }
+            }
+
+            if (viewModel.scenario == "lluvia" && hasExteriorOutdoor) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+                        .background(Color(0xFF78350F))
+                        .border(1.dp, Color(0xFFF59E0B), RoundedCornerShape(12.dp))
+                        .padding(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Filled.Warning, contentDescription = null, tint = Color(0xFFFCD34D), modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        "Hay visitas con equipos exteriores. Revisa si conviene reprogramar.",
+                        color = Color(0xFFFEF3C7),
+                        fontSize = 9.sp
+                    )
+                }
+            }
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("VISITAS DEL DÍA", color = Color(0xFF94A3B8), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                Text("${dayOts.size} programadas", color = Color(0xFF64748B), fontSize = 9.sp)
+            }
+
+            if (dayOts.isEmpty()) {
+                EmptyAgenda("No hay visitas programadas para este día.")
+            } else {
+                dayOts.forEach { ot ->
+                    AgendaRow(
+                        time = formatTime(ot.programadaPara),
+                        title = ot.cliente,
+                        local = "${ot.local} · ${ot.direccion}",
+                        tecnico = viewModel.tecnicoName(ot.tecnicoId),
+                        estado = ot.estado,
+                        priority = ot.prioridad,
+                        exterior = ot.exterior,
+                        onClick = {
+                            viewModel.selectOt(ot.id)
+                            onNavigate(Rutas.JEFE_DETALLE)
+                        }
+                    )
+                }
+            }
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("SIN PROGRAMAR", color = Color(0xFF94A3B8), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                Text("${viewModel.pendingAssignmentOts.size}", color = Color(0xFF64748B), fontSize = 9.sp)
+            }
+            if (viewModel.pendingAssignmentOts.isEmpty()) {
+                EmptyAgenda("No hay OT pendientes de programación.")
+            } else {
+                viewModel.pendingAssignmentOts.forEach { ot ->
+                    AgendaRow(
+                        time = "Pendiente",
+                        title = ot.cliente,
+                        local = "${ot.local} · ${ot.equipo}",
+                        tecnico = "Sin asignar",
+                        estado = ot.estado,
+                        priority = ot.prioridad,
+                        exterior = ot.exterior,
+                        onClick = {
+                            viewModel.selectOt(ot.id)
+                            onNavigate(Rutas.JEFE_DETALLE)
+                        }
+                    )
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+        }
+    }
+}
+
+@Composable
+private fun DayCell(timestamp: Long, selected: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val calendar = Calendar.getInstance().apply { timeInMillis = timestamp }
+    val dayName = SimpleDateFormat("EEE", Locale.getDefault()).format(timestamp).replace(".", "")
+    val dayNumber = calendar.get(Calendar.DAY_OF_MONTH)
+    Column(
+        modifier = modifier.clip(RoundedCornerShape(10.dp))
+            .background(if (selected) Color(0xFF0EA5E9) else Color(0xFF1E293B))
+            .border(1.dp, if (selected) Color(0xFF38BDF8) else Color(0xFF334155), RoundedCornerShape(10.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(dayName, color = if (selected) Color.White else Color(0xFF94A3B8), fontSize = 8.sp)
+        Text("$dayNumber", color = if (selected) Color.White else Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+private fun AgendaRow(
+    time: String,
+    title: String,
+    local: String,
+    tecnico: String,
+    estado: String,
+    priority: String,
+    exterior: Boolean,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
+            .background(Color(0xFF1E293B))
+            .border(1.dp, Color(0xFF334155), RoundedCornerShape(14.dp))
+            .clickable(onClick = onClick)
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Column(modifier = Modifier.width(42.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(Icons.Filled.Schedule, contentDescription = null, tint = Color(0xFF38BDF8), modifier = Modifier.size(14.dp))
+            Text(time, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            Text(local, color = Color(0xFF94A3B8), fontSize = 9.sp)
+            Text(tecnico, color = Color(0xFF64748B), fontSize = 9.sp)
+            if (exterior) {
+                Text("Equipo exterior", color = Color(0xFFFCD34D), fontSize = 8.sp)
             }
         }
+        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            StatusBadge(estado)
+            PriorityBadge(priority)
+        }
+        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = Color(0xFF64748B), modifier = Modifier.size(14.dp))
+    }
+}
+
+@Composable
+private fun EmptyAgenda(text: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
+            .background(Color(0xFF1E293B))
+            .border(1.dp, Color(0xFF334155), RoundedCornerShape(14.dp))
+            .padding(14.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(Icons.Filled.CloudOff, contentDescription = null, tint = Color(0xFF64748B), modifier = Modifier.size(16.dp))
+        Text(text, color = Color(0xFF94A3B8), fontSize = 10.sp)
     }
 }

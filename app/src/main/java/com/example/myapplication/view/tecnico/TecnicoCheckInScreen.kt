@@ -1,24 +1,46 @@
 package com.example.myapplication.view.tecnico
 
 import android.Manifest
-import android.content.pm.PackageManager
-import android.location.Location
+import android.content.Intent
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.GpsFixed
+import androidx.compose.material.icons.filled.LocationOff
+import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,364 +49,295 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
+import com.example.myapplication.domain.OtWorkflow
 import com.example.myapplication.navigation.Rutas
-import com.example.myapplication.ui.components.OfflineBanner
 import com.example.myapplication.ui.components.PhoneScreen
+import com.example.myapplication.ui.components.StatusBadge
 import com.example.myapplication.util.LocationProvider
+import com.example.myapplication.util.LocationResult
+import com.example.myapplication.util.formatAccuracy
+import com.example.myapplication.util.formatCoordinate
+import com.example.myapplication.util.formatDateTime
 import com.example.myapplication.viewmodel.AppViewModel
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
 @Composable
 fun TecnicoCheckInScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
     val context = LocalContext.current
-    val ot = viewModel.selectedOT
-    val checkedIn = ot.estado in setOf("En ejecución", "Cerrada", "Conformada")
-    val storedCheckIn = viewModel.selectedCheckIn
     val locationProvider = remember { LocationProvider(context) }
-    var currentLocation by remember(ot.id) { mutableStateOf<Location?>(null) }
-    var isLocating by remember(ot.id) { mutableStateOf(false) }
-    var locationError by remember(ot.id) { mutableStateOf<String?>(null) }
-    var requestKey by remember(ot.id) { mutableStateOf(0) }
+    val scope = rememberCoroutineScope()
+    val ot = viewModel.selectedOT
+    val existing = viewModel.selectedCheckIn
 
-    fun hasLocationPermission(): Boolean {
-        val fine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        val coarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        return fine || coarse
-    }
+    var result by remember { mutableStateOf<LocationResult?>(null) }
+    var loading by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var message by remember { mutableStateOf<String?>(null) }
+    var permissionGranted by remember { mutableStateOf(locationProvider.hasPermission()) }
+    var manualWithoutGps by remember { mutableStateOf(false) }
 
-    LaunchedEffect(requestKey) {
-        if (requestKey == 0) return@LaunchedEffect
-        isLocating = true
-        locationError = null
-        try {
-            val location = withTimeoutOrNull(15000) { locationProvider.getCurrentLocation() }
-            if (location == null) {
-                locationError = "No se obtuvo una ubicación en 15 segundos. Verifica el GPS e intenta nuevamente."
+    fun locate() {
+        if (!locationProvider.hasPermission()) {
+            error = "Sin permiso de ubicación. Puedes registrar el check-in sin GPS."
+            return
+        }
+        if (!locationProvider.isLocationEnabled()) {
+            val cached = locationProvider.getLastKnownLocation(24 * 60 * 60 * 1000L)
+            if (cached != null) {
+                result = cached.copy(source = "last_known")
+                error = null
             } else {
-                currentLocation = location
+                error = "La ubicación está desactivada. Actívala o continúa sin GPS."
             }
-        } catch (error: Exception) {
-            locationError = error.message ?: "No se pudo obtener la ubicación."
-        } finally {
-            isLocating = false
+            return
+        }
+        loading = true
+        error = null
+        scope.launch {
+            val found = withTimeoutOrNull(15_000L) {
+                runCatching { locationProvider.getCurrentLocation() }.getOrElse { failure ->
+                    val cached = locationProvider.getLastKnownLocation(24 * 60 * 60 * 1000L)
+                    if (cached != null) {
+                        cached.copy(source = "last_known")
+                    } else {
+                        error = failure.message ?: "No se pudo obtener la ubicación."
+                        null
+                    }
+                }
+            }
+            if (found != null) {
+                result = if (found.fromCache) found.copy(source = "last_known") else found
+                error = null
+            } else if (error == null) {
+                val cached = locationProvider.getLastKnownLocation(24 * 60 * 60 * 1000L)
+                if (cached != null) {
+                    result = cached.copy(source = "last_known")
+                } else {
+                    error = "No se obtuvo una ubicación a tiempo. Puedes continuar sin GPS."
+                }
+            }
+            loading = false
         }
     }
 
-    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
-        val granted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
-            permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-        if (granted) {
-            requestKey += 1
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) {
+        permissionGranted = locationProvider.hasPermission()
+        if (permissionGranted) locate() else error = "Permiso denegado. Puedes continuar sin GPS."
+    }
+
+    LaunchedEffect(ot.id) {
+        if (existing == null) locate()
+    }
+
+    fun confirm(sourceOverride: String? = null) {
+        val source = sourceOverride ?: when {
+            manualWithoutGps -> "none"
+            result == null -> "none"
+            result?.source == "last_known" -> "last_known"
+            result?.location?.provider == "network" -> "network"
+            else -> "gps"
+        }
+        val latitude = if (manualWithoutGps) null else result?.location?.latitude
+        val longitude = if (manualWithoutGps) null else result?.location?.longitude
+        val accuracy = if (manualWithoutGps) null else result?.location?.accuracy
+        val failure = viewModel.doCheckIn(
+            id = ot.id,
+            latitude = latitude,
+            longitude = longitude,
+            accuracy = accuracy,
+            timestamp = System.currentTimeMillis(),
+            source = source
+        )
+        if (failure == null) {
+            onNavigate(Rutas.EJECUCION)
         } else {
-            locationError = "Permiso de ubicación denegado. Habilítalo para registrar el check-in."
+            message = failure
         }
     }
-
-    val requestLocation = {
-        locationError = null
-        if (hasLocationPermission()) {
-            requestKey += 1
-        } else {
-            permissionLauncher.launch(
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                )
-            )
-        }
-    }
-
-    val displayLatitude = storedCheckIn?.latitude ?: currentLocation?.latitude
-    val displayLongitude = storedCheckIn?.longitude ?: currentLocation?.longitude
-    val displayAccuracy = storedCheckIn?.accuracy ?: currentLocation?.accuracy
-    val displayTimestamp = storedCheckIn?.createdAt ?: currentLocation?.time
-    val hasLocation = displayLatitude != null && displayLongitude != null
 
     PhoneScreen(
         title = "Check-in",
-        subtitle = "${ot.id} · ${ot.cliente}",
+        subtitle = ot.id,
         onBack = { onNavigate(Rutas.DETALLE) }
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(150.dp)
-                    .clip(RoundedCornerShape(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
                     .background(Color(0xFF1E293B))
-                    .border(1.dp, Color(0xFF334155), RoundedCornerShape(16.dp)),
-                contentAlignment = Alignment.Center
+                    .border(1.dp, Color(0xFF334155), RoundedCornerShape(14.dp))
+                    .padding(14.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        imageVector = if (hasLocation) Icons.Filled.MyLocation else Icons.Filled.LocationSearching,
-                        contentDescription = null,
-                        tint = if (hasLocation) Color(0xFF10B981) else Color(0xFF0EA5E9),
-                        modifier = Modifier.size(40.dp)
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = if (hasLocation) "Ubicación GPS capturada" else "Ubicación GPS pendiente",
-                        color = Color.White,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = if (hasLocation) {
-                            "${formatCoordinate(displayLatitude)}, ${formatCoordinate(displayLongitude)}"
-                        } else {
-                            ot.direccion
-                        },
-                        color = Color(0xFF94A3B8),
-                        fontSize = 10.sp
-                    )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(ot.cliente, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text("${ot.local} · ${ot.direccion}", color = Color(0xFF94A3B8), fontSize = 10.sp)
                 }
+                StatusBadge(ot.estado)
             }
 
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Color(0xFF1E293B))
-                    .border(1.dp, Color(0xFF334155), RoundedCornerShape(16.dp))
-                    .padding(14.dp)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(if (hasLocation) Color(0xFF065F46) else Color(0xFF334155)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.MyLocation,
-                            contentDescription = null,
-                            tint = if (hasLocation) Color(0xFF6EE7B7) else Color(0xFF94A3B8),
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = if (hasLocation) "Ubicación capturada" else "Ubicación pendiente",
-                            color = Color.White,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = when {
-                                storedCheckIn != null -> "Registro guardado localmente"
-                                isLocating -> "Obteniendo GPS del dispositivo..."
-                                locationError != null -> locationError.orEmpty()
-                                else -> "Precisión ${formatAccuracy(displayAccuracy)}"
-                            },
-                            color = if (locationError != null && !hasLocation) Color(0xFFFCA5A5) else Color(0xFF94A3B8),
-                            fontSize = 10.sp
-                        )
-                    }
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(if (hasLocation) Color(0xFF065F46).copy(alpha = 0.5f) else Color(0xFF334155))
-                            .border(
-                                1.dp,
-                                if (hasLocation) Color(0xFF059669) else Color(0xFF475569),
-                                RoundedCornerShape(6.dp)
-                            )
-                            .padding(horizontal = 8.dp, vertical = 2.dp)
-                    ) {
-                        Text(
-                            text = if (hasLocation) "OK" else "PENDIENTE",
-                            color = if (hasLocation) Color(0xFF6EE7B7) else Color(0xFFCBD5E1),
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-                HorizontalDivider(color = Color(0xFF334155))
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Column {
-                        Text(text = "LATITUD", color = Color(0xFF94A3B8), fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                        Text(
-                            text = displayLatitude?.let { formatCoordinate(it) } ?: "--",
-                            color = Color.White,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    Column {
-                        Text(text = "LONGITUD", color = Color(0xFF94A3B8), fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                        Text(
-                            text = displayLongitude?.let { formatCoordinate(it) } ?: "--",
-                            color = Color.White,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    Column {
-                        Text(text = "PRECISIÓN", color = Color(0xFF94A3B8), fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                        Text(
-                            text = formatAccuracy(displayAccuracy),
-                            color = Color.White,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    Column {
-                        Text(text = "HORA", color = Color(0xFF94A3B8), fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                        Text(
-                            text = displayTimestamp?.let { formatTime(it) } ?: "--:--",
-                            color = Color.White,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
-
-            AnimatedVisibility(
-                visible = locationError != null && !checkedIn,
-                enter = fadeIn(),
-                exit = fadeOut()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFF7F1D1D))
-                        .padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
+            if (existing != null) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
+                        .background(Color(0xFF064E3B))
+                        .border(1.dp, Color(0xFF10B981), RoundedCornerShape(16.dp))
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Icon(Icons.Filled.ErrorOutline, contentDescription = null, tint = Color(0xFFFCA5A5))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = locationError.orEmpty(), color = Color(0xFFFEE2E2), fontSize = 11.sp)
-                }
-            }
-
-            OfflineBanner(isOffline = viewModel.connection == "offline")
-
-            if (checkedIn) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFF065F46).copy(alpha = 0.3f))
-                        .border(1.dp, Color(0xFF059669), RoundedCornerShape(12.dp))
-                        .padding(12.dp)
-                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = Color(0xFF6EE7B7), modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Check-in ya registrado", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    }
                     Text(
-                        text = if (storedCheckIn != null) {
-                            "Check-in registrado a las ${formatTime(storedCheckIn.createdAt)}. Ya puedes comenzar la ejecución."
-                        } else {
-                            "Esta OT ya se encuentra en ejecución."
-                        },
-                        color = Color(0xFF6EE7B7),
+                        "${formatCoordinate(existing.latitude)}, ${formatCoordinate(existing.longitude)}",
+                        color = Color(0xFFA7F3D0),
                         fontSize = 11.sp
                     )
-                }
-            }
-
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 16.dp)) {
-                if (!checkedIn) {
-                    if (currentLocation == null) {
-                        Button(
-                            onClick = { requestLocation() },
-                            enabled = !isLocating,
-                            modifier = Modifier.fillMaxWidth().height(48.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF0EA5E9),
-                                disabledContainerColor = Color(0xFF334155)
-                            ),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            if (isLocating) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(20.dp),
-                                    color = Color.White,
-                                    strokeWidth = 2.dp
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Obteniendo ubicación...", color = Color.White, fontWeight = FontWeight.Bold)
-                            } else {
-                                Icon(Icons.Filled.MyLocation, contentDescription = null, tint = Color.White)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Capturar ubicación GPS", color = Color.White, fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    } else {
-                        Button(
-                            onClick = {
-                                currentLocation?.let {
-                                    viewModel.doCheckIn(it.latitude, it.longitude, it.accuracy, it.time)
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth().height(48.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0EA5E9)),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Icon(Icons.Filled.Place, contentDescription = null, tint = Color.White)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Registrar check-in", color = Color.White, fontWeight = FontWeight.Bold)
-                        }
-
-                        OutlinedButton(
-                            onClick = { requestLocation() },
-                            enabled = !isLocating,
-                            modifier = Modifier.fillMaxWidth().height(44.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
-                        ) {
-                            Icon(Icons.Filled.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Actualizar ubicación")
-                        }
-                    }
-                } else {
+                    Text(
+                        "${formatAccuracy(existing.accuracy)} · ${sourceLabel(existing.source)} · ${formatDateTime(existing.createdAt)}",
+                        color = Color(0xFF6EE7B7),
+                        fontSize = 10.sp
+                    )
                     Button(
                         onClick = { onNavigate(Rutas.EJECUCION) },
-                        modifier = Modifier.fillMaxWidth().height(48.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
-                        shape = RoundedCornerShape(12.dp)
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981))
                     ) {
-                        Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = Color.White)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Continuar a ejecución", color = Color.White, fontWeight = FontWeight.Bold)
+                        Text("Continuar a ejecución", fontWeight = FontWeight.Bold)
+                    }
+                }
+            } else {
+                Column(
+                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
+                        .background(Color(0xFF1E293B))
+                        .border(1.dp, Color(0xFF334155), RoundedCornerShape(16.dp))
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.MyLocation, contentDescription = null, tint = Color(0xFF38BDF8), modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Ubicación del check-in", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Text("Se guarda para respaldar la visita en terreno.", color = Color(0xFF94A3B8), fontSize = 9.sp)
+                        }
+                        if (loading) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color(0xFF38BDF8), strokeWidth = 2.dp)
+                        }
+                    }
+
+                    when {
+                        result != null -> {
+                            Text(
+                                "${formatCoordinate(result?.location?.latitude)}, ${formatCoordinate(result?.location?.longitude)}",
+                                color = Color.White,
+                                fontSize = 12.sp
+                            )
+                            Text(
+                                "${formatAccuracy(result?.location?.accuracy)} · ${sourceLabel(result?.source ?: "gps")}",
+                                color = Color(0xFF7DD3FC),
+                                fontSize = 10.sp
+                            )
+                        }
+                        manualWithoutGps -> {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Filled.LocationOff, contentDescription = null, tint = Color(0xFFFCD34D), modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Check-in sin ubicación GPS.", color = Color(0xFFFCD34D), fontSize = 10.sp)
+                            }
+                        }
+                        error != null -> {
+                            Text(error.orEmpty(), color = Color(0xFFFCA5A5), fontSize = 10.sp)
+                        }
+                        else -> {
+                            Text("Esperando ubicación...", color = Color(0xFF94A3B8), fontSize = 10.sp)
+                        }
+                    }
+
+                    if (error != null && result == null && !manualWithoutGps) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(onClick = { locate() }, modifier = Modifier.weight(1f)) {
+                                Icon(Icons.Filled.Refresh, contentDescription = null, modifier = Modifier.size(14.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Reintentar", fontSize = 10.sp)
+                            }
+                            OutlinedButton(
+                                onClick = {
+                                    context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+                                },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(Icons.Filled.Settings, contentDescription = null, modifier = Modifier.size(14.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Activar GPS", fontSize = 10.sp)
+                            }
+                        }
+                    }
+
+                    if (!permissionGranted) {
+                        OutlinedButton(
+                            onClick = {
+                                permissionLauncher.launch(
+                                    arrayOf(
+                                        Manifest.permission.ACCESS_FINE_LOCATION,
+                                        Manifest.permission.ACCESS_COARSE_LOCATION
+                                    )
+                                )
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Filled.GpsFixed, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Permitir ubicación", fontSize = 10.sp)
+                        }
+                    }
+
+                    if (result == null && !manualWithoutGps) {
+                        OutlinedButton(
+                            onClick = { manualWithoutGps = true; error = null },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Continuar sin GPS", fontSize = 10.sp)
+                        }
                     }
                 }
 
-                OutlinedButton(
-                    onClick = { onNavigate(Rutas.DETALLE) },
-                    modifier = Modifier.fillMaxWidth().height(44.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
-                ) {
-                    Icon(Icons.Filled.Navigation, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Volver al detalle")
+                if (message != null) {
+                    Text(message.orEmpty(), color = Color(0xFFFCA5A5), fontSize = 10.sp)
                 }
+
+                Button(
+                    onClick = { confirm() },
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    enabled = !loading && (result != null || manualWithoutGps),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0EA5E9))
+                ) {
+                    Icon(Icons.Filled.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Registrar check-in", fontWeight = FontWeight.Bold)
+                }
+
+                Text(
+                    "El GPS no es obligatorio. Si el dispositivo no entrega ubicación, puedes continuar y quedará registrado sin coordenadas.",
+                    color = Color(0xFF64748B),
+                    fontSize = 9.sp
+                )
             }
         }
     }
 }
 
-private fun formatCoordinate(value: Double): String =
-    String.format(Locale.getDefault(), "%.6f", value)
-
-private fun formatAccuracy(accuracy: Float?): String =
-    if (accuracy == null || accuracy <= 0f) "No informada" else "±${accuracy.toInt()} m"
-
-private fun formatTime(timestamp: Long): String =
-    SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(timestamp))
+private fun sourceLabel(source: String): String = when (source.lowercase()) {
+    "gps" -> "GPS"
+    "network" -> "Red"
+    "last_known" -> "Última ubicación conocida"
+    "none" -> "Sin GPS"
+    else -> source
+}

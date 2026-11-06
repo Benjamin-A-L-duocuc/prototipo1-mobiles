@@ -2,17 +2,42 @@ package com.example.myapplication.view.tecnico
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Science
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -20,216 +45,271 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.myapplication.data.repository.MockRepository
+import com.example.myapplication.model.Material
 import com.example.myapplication.navigation.Rutas
-import com.example.myapplication.ui.components.OfflineBanner
 import com.example.myapplication.ui.components.PhoneScreen
+import com.example.myapplication.ui.components.StatusBadge
+import com.example.myapplication.util.formatDateTime
+import com.example.myapplication.util.formatShortDateTime
 import com.example.myapplication.viewmodel.AppViewModel
 
 @Composable
 fun TecnicoEjecucionScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) {
-    var step by remember { mutableStateOf("diagnostico") }
-    var diagnosticoText by remember {
-        mutableStateOf("Se detecta baja presión en el circuito de refrigerante y acumulación de polvo en el condensador. Se recomienda recarga y limpieza.")
-    }
-    val actividades = MockRepository.actividades
-    val actividadEstados = remember { mutableStateMapOf(0 to true, 1 to true, 2 to false, 3 to false) }
-    val materiales = remember { mutableStateMapOf(0 to 2, 1 to 1, 2 to 2) }
-
-    val doneCount = when (step) {
-        "diagnostico" -> 1
-        "actividades" -> 2
-        "materiales" -> 3
-        else -> 4
-    }
-
     val ot = viewModel.selectedOT
+    var diagnosis by remember(ot.id) { mutableStateOf(ot.diagnostico) }
+    var message by remember(ot.id) { mutableStateOf<String?>(null) }
+    var activitiesMessage by remember(ot.id) { mutableStateOf<String?>(null) }
+    var newActivity by remember(ot.id) { mutableStateOf("") }
+    var materialsMessage by remember(ot.id) { mutableStateOf<String?>(null) }
+    var materialName by remember(ot.id) { mutableStateOf("") }
+    var materialUnit by remember(ot.id) { mutableStateOf("unidad") }
+    var materialQuantity by remember(ot.id) { mutableStateOf("1") }
+    var materials by remember(ot.id) { mutableStateOf(viewModel.selectedMaterials) }
+
+    LaunchedEffect(ot.id, viewModel.selectedMaterials) {
+        if (materials != viewModel.selectedMaterials) {
+            materials = viewModel.selectedMaterials
+        }
+    }
+
+    val activities = viewModel.selectedActivities
+    val completed = activities.count { it.completada }
+    val evidenceCount = viewModel.evidenceList.size
+    val checkIn = viewModel.selectedCheckIn
+
     PhoneScreen(
         title = "Ejecución",
-        subtitle = "${ot.id} · En ejecución",
+        subtitle = ot.id,
         onBack = { onNavigate(Rutas.DETALLE) }
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            OfflineBanner(isOffline = viewModel.connection == "offline")
-
-            // Progress bar & steps
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(text = "Paso $doneCount de 4", color = Color(0xFF94A3B8), fontSize = 10.sp)
-                    Text(text = "${(doneCount * 25)}%", color = Color(0xFF94A3B8), fontSize = 10.sp)
+            Row(
+                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
+                    .background(Color(0xFF1E293B))
+                    .border(1.dp, Color(0xFF334155), RoundedCornerShape(14.dp))
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(ot.cliente, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text("${ot.local} · ${ot.equipo}", color = Color(0xFF94A3B8), fontSize = 9.sp)
+                    if (checkIn != null) {
+                        Text("Check-in: ${formatShortDateTime(checkIn.createdAt)}", color = Color(0xFF6EE7B7), fontSize = 8.sp)
+                    }
                 }
-                Spacer(modifier = Modifier.height(6.dp))
-                LinearProgressIndicator(
-                    progress = { doneCount / 4f },
-                    modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
-                    color = Color(0xFF0EA5E9),
-                    trackColor = Color(0xFF334155),
-                )
+                StatusBadge(ot.estado)
+            }
 
-                Spacer(modifier = Modifier.height(12.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    val stepList = listOf("diagnostico" to "Diagnóstico", "actividades" to "Actividades", "materiales" to "Materiales", "evidencias" to "Evidencias")
-                    stepList.forEachIndexed { index, (sVal, sLabel) ->
-                        val active = sVal == step
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.clickable {
-                                if (sVal == "evidencias") {
-                                    onNavigate(Rutas.EVIDENCIAS)
-                                } else {
-                                    step = sVal
-                                }
-                            }
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(28.dp)
-                                    .clip(CircleShape)
-                                    .background(if (active) Color(0xFF0EA5E9) else Color(0xFF1E293B))
-                                    .border(1.dp, if (active) Color(0xFF38BDF8) else Color(0xFF334155), CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(text = "${index + 1}", color = if (active) Color.White else Color(0xFF94A3B8), fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                            }
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(text = sLabel, color = if (active) Color(0xFF38BDF8) else Color(0xFF94A3B8), fontSize = 9.sp)
+            Text("DIAGNÓSTICO", color = Color(0xFF94A3B8), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            OutlinedTextField(
+                value = diagnosis,
+                onValueChange = { diagnosis = it },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 4,
+                label = { Text("Describe el diagnóstico técnico") }
+            )
+            OutlinedButton(
+                onClick = {
+                    if (diagnosis.trim().length < 5) {
+                        message = "El diagnóstico debe tener al menos 5 caracteres."
+                    } else {
+                        viewModel.saveDiagnostico(diagnosis)
+                        message = "Diagnóstico guardado."
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Filled.Science, contentDescription = null, modifier = Modifier.size(14.dp))
+                Spacer(Modifier.width(4.dp))
+                Text("Guardar diagnóstico", fontSize = 10.sp)
+            }
+            if (message != null) Text(message.orEmpty(), color = Color(0xFF7DD3FC), fontSize = 9.sp)
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("ACTIVIDADES", color = Color(0xFF94A3B8), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                Text("$completed/${activities.size} completadas", color = Color(0xFF64748B), fontSize = 9.sp)
+            }
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(
+                    value = newActivity,
+                    onValueChange = { newActivity = it },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    label = { Text("Nueva actividad") }
+                )
+                Spacer(Modifier.width(6.dp))
+                IconButton(onClick = {
+                    if (newActivity.trim().length < 3) {
+                        activitiesMessage = "Describe la actividad."
+                    } else {
+                        viewModel.addActivity(newActivity)
+                        newActivity = ""
+                        activitiesMessage = null
+                    }
+                }) {
+                    Icon(Icons.Filled.Add, contentDescription = "Agregar actividad", tint = Color(0xFF38BDF8))
+                }
+            }
+            if (activitiesMessage != null) Text(activitiesMessage.orEmpty(), color = Color(0xFFFCA5A5), fontSize = 9.sp)
+
+            if (activities.isEmpty()) {
+                Text("Aún no hay actividades. Agrega al menos una para cerrar la OT.", color = Color(0xFF64748B), fontSize = 9.sp)
+            } else {
+                activities.forEach { activity ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
+                            .background(Color(0xFF1E293B))
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = activity.completada,
+                            onCheckedChange = { viewModel.toggleActivity(activity) }
+                        )
+                        Text(
+                            activity.descripcion,
+                            color = if (activity.completada) Color(0xFF94A3B8) else Color.White,
+                            fontSize = 10.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(onClick = { viewModel.deleteActivity(activity) }) {
+                            Icon(Icons.Filled.Delete, contentDescription = "Eliminar actividad", tint = Color(0xFFFCA5A5), modifier = Modifier.size(16.dp))
                         }
                     }
                 }
             }
 
-            // Step Content
-            when (step) {
-                "diagnostico" -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(Color(0xFF1E293B))
-                            .border(1.dp, Color(0xFF334155), RoundedCornerShape(16.dp))
-                            .padding(14.dp)
-                    ) {
-                        Text(text = "DIAGNÓSTICO TÉCNICO", color = Color(0xFF94A3B8), fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = diagnosticoText,
-                            onValueChange = { diagnosticoText = it },
-                            modifier = Modifier.fillMaxWidth().height(120.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color(0xFF0EA5E9),
-                                unfocusedBorderColor = Color(0xFF334155),
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White
-                            ),
-                            textStyle = LocalTextStyle.current.copy(fontSize = 11.sp)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = "Guardado local · pendiente de sincronizar", color = Color(0xFF10B981), fontSize = 10.sp)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("MATERIALES", color = Color(0xFF94A3B8), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                Text("Opcional", color = Color(0xFF64748B), fontSize = 9.sp)
+            }
+
+            materials.forEach { material ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
+                        .background(Color(0xFF1E293B))
+                        .padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(material.nombre, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        Text(material.unidad, color = Color(0xFF94A3B8), fontSize = 8.sp)
+                    }
+                    IconButton(onClick = {
+                        materials = materials.map {
+                            if (it == material) it.copy(cantidad = (it.cantidad - 1).coerceAtLeast(0)) else it
+                        }
+                    }) {
+                        Icon(Icons.Filled.Remove, contentDescription = "Quitar", modifier = Modifier.size(14.dp))
+                    }
+                    Text("${material.cantidad}", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    IconButton(onClick = {
+                        materials = materials.map {
+                            if (it == material) it.copy(cantidad = it.cantidad + 1) else it
+                        }
+                    }) {
+                        Icon(Icons.Filled.Add, contentDescription = "Agregar", modifier = Modifier.size(14.dp))
                     }
                 }
-                "actividades" -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(Color(0xFF1E293B))
-                            .border(1.dp, Color(0xFF334155), RoundedCornerShape(16.dp))
-                            .padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(text = "ACTIVIDADES REALIZADAS", color = Color(0xFF94A3B8), fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                        actividades.forEachIndexed { index, act ->
-                            val done = actividadEstados[index] == true
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(Color(0xFF0F172A))
-                                    .clickable { actividadEstados[index] = !done }
-                                    .padding(10.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(16.dp)
-                                        .clip(RoundedCornerShape(4.dp))
-                                        .background(if (done) Color(0xFF10B981) else Color.Transparent)
-                                        .border(1.dp, if (done) Color(0xFF10B981) else Color(0xFF64748B), RoundedCornerShape(4.dp)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    if (done) Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(10.dp))
-                                }
-                                Text(text = act, color = if (done) Color.White else Color(0xFF94A3B8), fontSize = 11.sp)
-                            }
-                        }
+            }
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(
+                    value = materialName,
+                    onValueChange = { materialName = it },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    label = { Text("Material") }
+                )
+                Spacer(Modifier.width(4.dp))
+                OutlinedTextField(
+                    value = materialQuantity,
+                    onValueChange = { materialQuantity = it.filter(Char::isDigit) },
+                    modifier = Modifier.width(54.dp),
+                    singleLine = true,
+                    label = { Text("Cant.") }
+                )
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(
+                    value = materialUnit,
+                    onValueChange = { materialUnit = it },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    label = { Text("Unidad") }
+                )
+                Spacer(Modifier.width(6.dp))
+                OutlinedButton(onClick = {
+                    val quantity = materialQuantity.toIntOrNull() ?: 0
+                    if (materialName.trim().length < 3 || quantity <= 0) {
+                        materialsMessage = "Indica material y cantidad válida."
+                    } else {
+                        materials = materials + Material(materialName.trim(), quantity, materialUnit.trim().ifBlank { "unidad" })
+                        materialName = ""
+                        materialQuantity = "1"
+                        materialsMessage = null
                     }
+                }) {
+                    Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(14.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Agregar", fontSize = 10.sp)
                 }
-                "materiales" -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(Color(0xFF1E293B))
-                            .border(1.dp, Color(0xFF334155), RoundedCornerShape(16.dp))
-                            .padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(text = "MATERIALES UTILIZADOS", color = Color(0xFF94A3B8), fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                        MockRepository.materiales.forEachIndexed { index, mat ->
-                            val cant = materiales[index] ?: mat.cantidad
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(Color(0xFF0F172A))
-                                    .padding(10.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(text = mat.nombre, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                    Text(text = "$cant ${mat.unidad}", color = Color(0xFF94A3B8), fontSize = 9.sp)
-                                }
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    IconButton(
-                                        onClick = { materiales[index] = maxOf(0, cant - 1) },
-                                        modifier = Modifier.size(28.dp)
-                                    ) {
-                                        Icon(Icons.Filled.Remove, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
-                                    }
-                                    Text(text = "$cant", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                    IconButton(
-                                        onClick = { materiales[index] = cant + 1 },
-                                        modifier = Modifier.size(28.dp)
-                                    ) {
-                                        Icon(Icons.Filled.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
-                                    }
-                                }
-                            }
-                        }
-                    }
+            }
+            if (materialsMessage != null) Text(materialsMessage.orEmpty(), color = Color(0xFFFCA5A5), fontSize = 9.sp)
+            OutlinedButton(
+                onClick = {
+                    viewModel.saveMaterials(materials)
+                    materialsMessage = "Materiales guardados."
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Guardar materiales", fontSize = 10.sp)
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
+                    .background(Color(0xFF1E293B))
+                    .border(1.dp, Color(0xFF334155), RoundedCornerShape(14.dp))
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Filled.PhotoCamera, contentDescription = null, tint = Color(0xFF38BDF8), modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Evidencias", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Text("$evidenceCount fotografías adjuntas", color = Color(0xFF94A3B8), fontSize = 9.sp)
+                }
+                OutlinedButton(onClick = { onNavigate(Rutas.EVIDENCIAS) }) {
+                    Text("Gestionar", fontSize = 9.sp)
                 }
             }
 
             Button(
                 onClick = {
-                    if (step == "diagnostico") step = "actividades"
-                    else if (step == "actividades") step = "materiales"
-                    else onNavigate(Rutas.EVIDENCIAS)
+                    if (diagnosis.trim().length < 5) {
+                        message = "Guarda un diagnóstico antes de continuar."
+                    } else if (activities.isEmpty()) {
+                        message = "Agrega al menos una actividad."
+                    } else if (evidenceCount == 0) {
+                        message = "Agrega al menos una evidencia fotográfica."
+                    } else {
+                        viewModel.saveDiagnostico(diagnosis)
+                        viewModel.saveMaterials(materials)
+                        onNavigate(Rutas.CIERRE)
+                    }
                 },
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0EA5E9)),
-                shape = RoundedCornerShape(12.dp)
+                modifier = Modifier.fillMaxWidth().height(46.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0EA5E9))
             ) {
-                Text(if (step == "materiales") "Continuar a evidencias" else "Siguiente paso", color = Color.White, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.width(8.dp))
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.White)
+                Icon(Icons.Filled.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Continuar al cierre", fontWeight = FontWeight.Bold)
             }
+            Spacer(Modifier.height(8.dp))
         }
     }
 }

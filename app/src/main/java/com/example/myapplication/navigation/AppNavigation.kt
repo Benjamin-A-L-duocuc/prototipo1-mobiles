@@ -16,10 +16,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.myapplication.view.auth.LoginScreen
+import com.example.myapplication.view.cliente.ClienteDetalleOTScreen
 import com.example.myapplication.view.cliente.ClienteSeguimientoScreen
 import com.example.myapplication.view.jefe.JefeAgendaScreen
+import com.example.myapplication.view.jefe.JefeCatalogoScreen
 import com.example.myapplication.view.jefe.JefeCrearOTScreen
 import com.example.myapplication.view.jefe.JefeDashboardScreen
+import com.example.myapplication.view.jefe.JefeOTDetailScreen
 import com.example.myapplication.view.tecnico.SyncCenterScreen
 import com.example.myapplication.view.tecnico.TecnicoCheckInScreen
 import com.example.myapplication.view.tecnico.TecnicoCierreScreen
@@ -92,14 +95,23 @@ fun AppNavigation(viewModel: AppViewModel) {
             composable(Rutas.DASHBOARD) {
                 JefeDashboardScreen(viewModel = viewModel, onNavigate = navigate)
             }
+            composable(Rutas.JEFE_DETALLE) {
+                JefeOTDetailScreen(viewModel = viewModel, onNavigate = navigate)
+            }
             composable(Rutas.CREAR_OT) {
                 JefeCrearOTScreen(viewModel = viewModel, onNavigate = navigate)
             }
             composable(Rutas.AGENDA) {
                 JefeAgendaScreen(viewModel = viewModel, onNavigate = navigate)
             }
+            composable(Rutas.CATALOGO) {
+                JefeCatalogoScreen(viewModel = viewModel, onNavigate = navigate)
+            }
             composable(Rutas.CLIENTE) {
                 ClienteSeguimientoScreen(viewModel = viewModel, onNavigate = navigate)
+            }
+            composable(Rutas.CLIENTE_DETALLE) {
+                ClienteDetalleOTScreen(viewModel = viewModel, onNavigate = navigate)
             }
         }
     }

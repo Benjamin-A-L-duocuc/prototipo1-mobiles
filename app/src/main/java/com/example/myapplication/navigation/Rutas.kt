@@ -10,7 +10,11 @@ object Rutas {
     const val CIERRE = "cierre"
     const val SYNC = "sync"
     const val DASHBOARD = "dashboard"
+    const val JEFE_DETALLE = "jefe_detalle"
     const val CREAR_OT = "crear"
     const val AGENDA = "agenda"
+    const val CATALOGO = "catalogo"
     const val CLIENTE = "cliente"
+    const val CREAR_USUARIO = "crear_usuario"
+    const val CLIENTE_DETALLE = "cliente_detalle"
 }

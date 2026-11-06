@@ -88,8 +88,12 @@ fun StatusBadge(status: String) {
     val (bg, fg) = when (status.lowercase()) {
         "en ejecución" -> Pair(Color(0xFF0C4A6E), Color(0xFF7DD3FC))
         "aceptada" -> Pair(Color(0xFF1E3A8A), Color(0xFF93C5FD))
-        "cerrada", "conformada" -> Pair(Color(0xFF065F46), Color(0xFF6EE7B7))
+        "asignada" -> Pair(Color(0xFF1E40AF), Color(0xFFBFDBFE))
+        "cerrada" -> Pair(Color(0xFF065F46), Color(0xFF6EE7B7))
+        "conformada" -> Pair(Color(0xFF064E3B), Color(0xFFA7F3D0))
         "pendiente" -> Pair(Color(0xFF78350F), Color(0xFFFCD34D))
+        "rechazada por cliente" -> Pair(Color(0xFF7F1D1D), Color(0xFFFCA5A5))
+        "cancelada" -> Pair(Color(0xFF334155), Color(0xFF94A3B8))
         else -> Pair(Color(0xFF334155), Color(0xFFCBD5E1))
     }
     Box(
