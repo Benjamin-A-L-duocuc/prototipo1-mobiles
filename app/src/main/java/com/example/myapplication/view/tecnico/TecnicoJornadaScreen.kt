@@ -35,6 +35,7 @@ fun TecnicoJornadaScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) 
     var viewMode by remember { mutableStateOf("lista") }
     val tecnico = MockRepository.tecnico
     val ots = viewModel.otList
+    val exteriorCount = ots.count { it.exterior }
 
     PhoneScreen(
         title = "Mi jornada",
@@ -89,7 +90,7 @@ fun TecnicoJornadaScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) 
                 Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(text = "Hola, ${tecnico.nombre}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    Text(text = "${ots.size} visitas hoy · 2 con equipo exterior", color = Color.White.copy(alpha = 0.9f), fontSize = 11.sp)
+                    Text(text = "${ots.size} visitas hoy · $exteriorCount con equipo exterior", color = Color.White.copy(alpha = 0.9f), fontSize = 11.sp)
                 }
                 Icon(Icons.Filled.Thermostat, contentDescription = null, tint = Color.White.copy(alpha = 0.8f))
             }
@@ -109,7 +110,7 @@ fun TecnicoJornadaScreen(viewModel: AppViewModel, onNavigate: (String) -> Unit) 
                     Icon(Icons.Filled.WbCloudy, contentDescription = null, tint = Color(0xFFB45309))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Lluvia prevista a las 15:00. Tienes 2 visitas con equipos en azotea o patio.",
+                        text = "Lluvia prevista a las 15:00. Tienes $exteriorCount visitas con equipos en azotea o patio.",
                         color = Color(0xFF92400E),
                         fontSize = 11.sp
                     )
