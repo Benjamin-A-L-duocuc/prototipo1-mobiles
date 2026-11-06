@@ -123,7 +123,7 @@ These areas must not be treated as complete:
 - Closing an OT: does not set state `Cerrada`, does not validate evidence and does not record close time.
 - Offline sync: waiting is simulated with a delay; queue clearing is local only. There is no backend, retry policy or conflict resolution.
 - Connectivity: `NetworkMonitor` updates `AppViewModel.connection`, but synchronization is not automatic.
-- Weather: no public weather API integration. The rain scenario is a hardcoded state.
+- Weather: no public weather API integration. The rain UI exists, but there is no control in the app to activate the `lluvia` scenario.
 - SLA: dashboard compliance is clamped to a minimum of 85% and is not calculated from real timestamps.
 - At-risk SLA count only counts high-priority open OTs.
 - Active technician count is hardcoded.
